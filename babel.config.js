@@ -1,18 +1,17 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
-	presets: ['module:@react-native/babel-preset'],
-	plugins: [
-		[
-			'module-resolver',
-			{
-				root: ['./src'],
-				extensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.png'],
-				alias: {
-					'@': './src',
-				},
-			},
-		],
-		'inline-dotenv',
-		'react-native-reanimated/plugin', // needs to be last
-	],
+/** @type {import('@babel/core').TransformOptions['plugins']} */
+const plugins = [  
+  /** react-native-reanimated web support @see https://docs.swmansion.com/react-native-reanimated/docs/guides/web-support/ */
+  "@babel/plugin-transform-export-namespace-from",
+]
+
+/** @type {import('@babel/core').TransformOptions} */
+module.exports = function(api) {
+  api.cache(true);
+  return {
+    presets: ["babel-preset-expo"],
+    env: {
+      production: {},
+    },
+    plugins,
+  };
 };
