@@ -156,7 +156,7 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
       />
 
       {/* Version Text */}
-      <Text style={$versionText}>Version 1.0.0</Text>
+      <Text style={$versionText}>Version 2.0.0</Text>
     </Screen>
   );
 });

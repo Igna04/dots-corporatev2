@@ -29,6 +29,10 @@ import { AccountDetails as AccountDetailsPage } from "app/screens/pages/AccountD
 import { SavingsDepositPage2 } from "app/screens/pages/SavingsDepositPage2"
 import { WithdrawalSavings as WithdrawalSavingsPage } from "app/screens/pages/WithdrawalSavings"
 import { DetailsPage } from "app/screens/pages/DetailsPage"
+import { SearchAccountPage } from "app/screens/pages/SearchAccountPage"
+import { LoanPage } from "app/screens/pages/LoanPages";
+import { BluetoothPage } from "app/screens/pages/BluetoothPage"
+
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
  * as well as what properties (if any) they might take when navigating to them.
@@ -55,6 +59,9 @@ export type AppStackParamList = {
   SavingsDeposit2: undefined
   WithdrawalSavings: undefined
   Details: undefined
+  SearchAccount: undefined
+  Loan: undefined
+  Bluetooth: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
@@ -85,18 +92,19 @@ const AppStack = observer(function AppStack() {
     >
       {isAuthenticated ? (
         <>
-          <Stack.Screen name="Welcome" component={Screens.WelcomeScreen} />
-          <Stack.Screen name="Demo" component={DemoNavigator} />
+          <Stack.Screen name="Welcome" component={DemoNavigator} />
           <Stack.Screen name="Activity" component={ActivityPage} />
           <Stack.Screen name="CustomerList" component={CustomerListPage} />
           <Stack.Screen name="SavingDeposit" component={SavingDepositPage} />
           <Stack.Screen name="TransactionHistory" component={TransactionHistoryPage} />
           <Stack.Screen name="AllBatch" component={AllBatchPage} />
+          <Stack.Screen name="Loan" component={LoanPage} />
           <Stack.Screen name="AccountDetails" component={AccountDetailsPage} />
           <Stack.Screen name="SavingsDeposit2" component={SavingsDepositPage2} />
           <Stack.Screen name="WithdrawalSavings" component={WithdrawalSavingsPage} />
           <Stack.Screen name="Details" component={DetailsPage} />
-
+          <Stack.Screen name="SearchAccount" component={SearchAccountPage} />
+          <Stack.Screen name="Bluetooth" component={BluetoothPage} />
         </>
       ) : (
         <>

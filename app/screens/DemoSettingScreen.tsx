@@ -4,13 +4,14 @@ import React, { FC, useState } from "react"
 import { View, ViewStyle, StyleSheet, Image, ImageStyle, TextStyle } from "react-native"
 import { Button, Screen, Text } from "../components"
 import { DemoTabScreenProps } from "../navigators/DemoNavigator"
-import { spacing } from "../theme"
+import { colors, spacing } from "../theme"
 import { useStores } from "../models"
 import { Drawer } from "react-native-drawer-layout"
 import { isRTL } from "../i18n"
 import { CustomDrawer } from "./CustomDrawer"
 import { DrawerIconButton } from "./DemoShowroomScreen/DrawerIconButton"
 import { openLinkInBrowser } from "app/utils/openLinkInBrowser"
+import { useNavigation } from "@react-navigation/native"
 
 export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function DemoDebugScreen(
   _props,
@@ -21,6 +22,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
 
   const [open, setOpen] = useState(false)
 
+  const navigation = useNavigation()
   const toggleDrawer = () => {
     setOpen(!open)
   }
@@ -43,7 +45,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
         <View style={$content}>
           <Button
             style={$bluetoothButton}
-            onPress={() => openLinkInBrowser("https://bluetooth-settings-url")}
+            onPress={() => navigation.navigate('Bluetooth')}
           >
             <View style={$buttonContent}>
               <Image source={require("../assets/img/Bluetooth.png")} style={$bluetoothIcon} />
@@ -69,7 +71,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
 const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: colors.primaryColor,
     flexDirection: "row",
     paddingVertical: spacing.sm,
     position: "absolute",
@@ -78,7 +80,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerText: {
-    color: "#000",
+    color: colors.primaryText,
     fontSize: 20,
     fontWeight: "bold",
   },
@@ -96,15 +98,18 @@ const $content: ViewStyle = {
 }
 
 const $bluetoothButton: ViewStyle = {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 5,
+  backgroundColor: '#0d30b1',
+  borderRadius: 15,
   marginTop: spacing.md,
-  paddingHorizontal: spacing.md,
-  paddingVertical: spacing.sm,
-  borderColor: "#0000FF",
-  borderWidth: 1,
+  paddingHorizontal: spacing.lg,
+  paddingVertical: spacing.md,
   flexDirection: "row",
   alignItems: "center",
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  elevation: 5,
 }
 
 const $buttonContent: ViewStyle = {
@@ -113,13 +118,16 @@ const $buttonContent: ViewStyle = {
 }
 
 const $bluetoothIcon: ImageStyle = {
-  width: 20,
-  height: 20,
+  width: 24, // Slightly increase the icon size for better visibility
+  height: 24,
   marginRight: spacing.sm,
 }
 
 const $bluetoothButtonText: TextStyle = {
-  color: "#000000",
+  color: "#FFFFFF", // Switch to white text for contrast
+  fontSize: 18, // Slightly increase the font size
+  fontWeight: "600", // Make the text bold
+  marginLeft: spacing.sm,
 }
 
 const $buttonContainer: ViewStyle = {
@@ -129,20 +137,26 @@ const $buttonContainer: ViewStyle = {
 }
 
 const $logoutButton: ViewStyle = {
-  backgroundColor: "#FF0000",
-  borderRadius: 5,
+  backgroundColor: "red", // A softer red color for a modern look
+  borderRadius: 15, // Same rounded style as the Bluetooth button
   paddingHorizontal: spacing.lg,
   paddingVertical: spacing.md,
   flexDirection: "row",
   alignItems: "center",
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  elevation: 5,
 }
-
 const $logoutButtonText: TextStyle = {
-  color: "#FFFFFF",
+  color: "#FFFFFF", // Keep white text for contrast
+  fontSize: 18,
+  fontWeight: "600",
   marginLeft: spacing.sm,
 }
 
 const $logoutIcon: ImageStyle = {
-  width: 20,
-  height: 20,
+  width: 24, // Match the icon size for consistency
+  height: 24,
 }

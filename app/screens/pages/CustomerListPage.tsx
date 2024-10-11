@@ -1,10 +1,11 @@
+/* eslint-disable react-native/no-color-literals */
 /* eslint-disable react-native/sort-styles */
 import React, { useEffect, useState } from "react";
 import { View, TextInput, StyleSheet, TouchableOpacity, FlatList, Keyboard } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Text } from "../../components";
-import { spacing } from "app/theme";
+import { colors, spacing } from "app/theme";
 import { api } from "../../services/api";
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -24,6 +25,12 @@ interface Customer {
     cif: string;
     id_name: string;
     full_name: string;
+    address: string; // Tambahkan properti address dari kode kedua
+}
+
+// Interface untuk data tabungan nasabah
+interface Savings {
+    account_number: string
 }
 
 // Buat konstanta COLORS untuk mengikuti linting dan meningkatkan keterbacaan kode
@@ -36,19 +43,16 @@ const COLORS = {
 };
 
 export const CustomerListPage = () => {
-    // State Declaration
-    const navigation = useNavigation<ActivityPageNavigationProp>();
+    const navigation = useNavigation();
     const [searchQuery, setSearchQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [customerData, setCustomerData] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetching Data 
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 const result = await api.getAllCustomers();
-
                 if (result && result.kind === "ok") {
                     setCustomerData(result.customers);
                 } else {
@@ -64,58 +68,60 @@ export const CustomerListPage = () => {
         fetchCustomers();
     }, []);
 
-
-    // Filter data berdasarkan query pencarian
     const filteredData = customerData.filter(item =>
         item.full_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Sembunyikan keyboard setelah pencarian dikirim
     const handleSearchSubmit = () => {
         Keyboard.dismiss();
     };
 
-    // Navigasi ke 'DetailsPage' dengan parameter item
-    const handleCardPress = (item: Customer) => {
-        navigation.navigate("Details", { item });
+    // Update this function
+    const handleCardPress = async (item: Customer) => {
+        const savingsResponse = await api.getCustomerSavingsByCif(item.cif);
+        
+        // Tambahkan log untuk melihat struktur savingsResponse
+        console.log("Savings Response:", savingsResponse);
+        
+        if (savingsResponse && savingsResponse.kind === "ok" && savingsResponse.savings.length > 0) {
+            const accountNumber = savingsResponse.savings[0]?.account_number; // Pastikan account_number ada
+            if (accountNumber) {
+                console.log("Account Number:", accountNumber);
+                navigation.navigate("Details", { item, accountNumber });
+            } else {
+                console.log("Account number not found");
+                navigation.navigate("Details", { item });
+            }
+        } else {
+            console.log("Savings data not available: ", savingsResponse?.savings);
+            navigation.navigate("Details", { item });
+        }
     };
-
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <Text>Memuat data nasabah...</Text>
-            </View>
-        );
-    }
-
+    
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <FontAwesome name="arrow-left" size={18} color={COLORS.black} />
+                <TouchableOpacity onPress={() => navigation.navigate('Welcome')} style={styles.backButton}>
+                    <FontAwesome name="arrow-left" size={18} color={"black"} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Fasilitas Nasabah</Text>
             </View>
 
-            {/* Search Bar */}
             <View style={[styles.searchContainer, isFocused && styles.searchContainerFocused]}>
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Cari berdasarkan nama nasabah"
                     value={searchQuery}
-                    onChangeText={(text) => {
-                        setSearchQuery(text);
-                    }}
-                    onFocus={() => setIsFocused(true)} 
-                    onBlur={() => setIsFocused(false)} 
-                    onSubmitEditing={handleSearchSubmit} 
+                    onChangeText={(text) => setSearchQuery(text)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    onSubmitEditing={handleSearchSubmit}
                 />
                 <TouchableOpacity onPress={handleSearchSubmit} style={styles.searchIcon}>
                     <FontAwesome name="search" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
             </View>
 
-            {/* Render data nasabah yang difilter */}
             <FlatList
                 data={filteredData}
                 keyExtractor={(item) => item.cif}
@@ -125,7 +131,7 @@ export const CustomerListPage = () => {
                             <View style={styles.textContainer}>
                                 <Text style={styles.cardText}>{item.full_name}</Text>
                                 <View style={styles.divider} />
-                                <Text style={styles.cardDetails}>{item.id_name}</Text>
+                                <Text style={styles.cardDetails}>{item.address}</Text>
                             </View>
                             <Text style={styles.cardCode}>{item.cif}</Text>
                         </View>
@@ -136,6 +142,8 @@ export const CustomerListPage = () => {
         </View>
     );
 };
+
+
 
 const styles = StyleSheet.create({
     container: {
@@ -153,7 +161,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: "center",
-        backgroundColor: COLORS.white,
+        backgroundColor: "white",
         display: "flex",
         flexDirection: "row",
         paddingLeft: spacing.lg,
@@ -162,16 +170,17 @@ const styles = StyleSheet.create({
         top: 0,
         width: "100%",
         zIndex: 10,
-        marginTop: 20,
+        marginTop: 30,
     },
     searchContainer: {
         alignItems: "center",
         backgroundColor: COLORS.white,
-        borderBottomWidth: 0,
+        borderWidth: 1, // Tambahkan borderWidth untuk membuat border
+        borderColor: COLORS.lightGray, // Tentukan warna border
         borderRadius: 8,
         flexDirection: "row",
         marginHorizontal: spacing.lg,
-        marginTop: spacing.lg + 60,
+        marginTop: spacing.lg + 90,
         paddingHorizontal: spacing.md,
     },
     searchContainerFocused: {
@@ -190,52 +199,58 @@ const styles = StyleSheet.create({
         paddingLeft: spacing.sm,
     },
     title: {
+        color: "black",
         fontSize: 18,
         fontWeight: "bold",
     },
     card: {
         backgroundColor: COLORS.white,
-        borderRadius: 10,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
-        marginVertical: 10,
+        borderRadius: 8, // Reduced for a smoother corner
+        paddingVertical: 8, // Reduced vertical padding
+        paddingHorizontal: 12, // Reduced horizontal padding
+        marginVertical: 8, // Slight margin between cards
+        marginHorizontal: spacing.lg, // Horizontal margins adjusted
         shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 2 }, // Reduced shadow offset
         shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
+        shadowRadius: 4, // Reduced shadow radius for a subtler effect
+        elevation: 2, // Lowered elevation for a cleaner, flat look
+        borderWidth: 1, // Thin border
+        borderColor: COLORS.lightGray,
     },
     cardContent: {
-        alignItems: "flex-start",
         flexDirection: "row",
         justifyContent: "space-between",
+        alignItems: "center",
     },
     textContainer: {
         flex: 1,
+        marginRight: 8, // Reduced margin for tighter layout
     },
     cardText: {
-        fontSize: 16,
-        fontWeight: "700",
+        fontSize: 14, // Slightly smaller text size
+        fontWeight: "600",
+        color: COLORS.black,
     },
     cardDetails: {
         color: COLORS.gray,
-        fontSize: 14,
+        fontSize: 12, // Smaller address font size
+        marginTop: 2, // Tighter spacing between name and address
     },
     cardCode: {
-        color: COLORS.gray,
-        fontSize: 14,
-        fontWeight: "600",
-        marginLeft: spacing.md,
+        color: COLORS.black, // Subtle color for the code
+        fontSize: 12, // Smaller font size for the code
     },
     divider: {
         borderBottomColor: COLORS.lightGray,
-        borderBottomWidth: 1,
-        marginVertical: spacing.sm,
+        borderBottomWidth: 0.5, // Lighter divider line
+        marginVertical: 4, // Reduced spacing for tighter layout
     },
     cardList: {
         paddingBottom: spacing.lg,
-        paddingTop: spacing.xl + 100,
+        paddingTop: spacing.md,
     },
+
 });
 
 export default CustomerListPage;

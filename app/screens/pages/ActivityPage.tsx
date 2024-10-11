@@ -6,7 +6,7 @@ import { View, TextInput, StyleSheet, Alert, TouchableOpacity, ScrollView, ViewS
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Screen, Text } from "../../components";
-import { spacing } from "app/theme";
+import { colors, spacing } from "app/theme";
 import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
 
 export const ActivityPage = () => {
@@ -90,7 +90,7 @@ export const ActivityPage = () => {
     return (
         <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation.navigate('DemoCommunity')} style={styles.backButton}>
                     <FontAwesome name="arrow-left" size={18} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Buat Aktivitas</Text>
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: "center",
-        backgroundColor: "white",
+        backgroundColor: colors.primaryColor,
         display: "flex",
         flexDirection: "row",
         paddingLeft: spacing.lg,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     sectionContainerUmum: {
-        marginTop:36,
+        marginTop: 36,
         backgroundColor: "white", // Background color putih
         borderRadius: 10, // Rounded corners
         padding: 16, // Padding dalam section
@@ -388,6 +388,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: "bold",
+        color: colors.primaryText,
     },
 });
 

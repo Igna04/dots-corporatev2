@@ -5,14 +5,13 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Screen, Text } from "../../components";
 import { spacing } from "app/theme";
 import { useNavigation } from '@react-navigation/native';
-import QRCode from 'react-native-qrcode-svg'; // Install this package
-import { Buffer } from 'buffer'; // Import buffer for encoding to base64
+import QRCode from 'react-native-qrcode-svg';
+import { Buffer } from 'buffer';
 
 export const DetailsPage = ({ route }) => {
     const navigation = useNavigation();
-    const [activeTab, setActiveTab] = useState('Tabungan'); // New state to manage tab selection
-
-    const { item } = route.params || {
+    const [activeTab, setActiveTab] = useState('Tabungan');
+    const { item, accountNumber } = route.params || {
         item: {
             name: 'No Name',
             cif: 'No CIF',
@@ -22,9 +21,14 @@ export const DetailsPage = ({ route }) => {
         }
     };
 
-    // Fungsi untuk navigasi ke halaman AccountDetails
     const handleAccountDetailsPress = () => {
-        navigation.navigate('AccountDetails', { accountNumber: '00102010007783' });
+        navigation.navigate('AccountDetails', {
+            accountNumber: accountNumber,
+            name: item.full_name, // Ganti ini untuk mengirim name
+        });
+        console.log('Navigating to AccountDetails with data:');
+        console.log('Account Number:', accountNumber);
+        console.log('Customer Name:', item.full_name); // Tambahkan log untuk memeriksa nama
     };
 
     const renderContent = () => {
@@ -32,14 +36,14 @@ export const DetailsPage = ({ route }) => {
             case 'Tabungan':
                 return (
                     <View>
-                        {/* Bagian yang bisa diklik untuk navigasi */}
-                        <TouchableOpacity style={styles.walletContainer} onPress={handleAccountDetailsPress}>
-                            <FontAwesome name="money" size={24} color="gray" />
-                            <View style={styles.walletDetails}>
-                                <Text style={styles.walletText}>00102010007783</Text>
-                                <Text style={styles.walletLabel}>Tab Umum</Text>
-                            </View>
-                        </TouchableOpacity>
+                        {accountNumber ? (
+                            <TouchableOpacity style={styles.walletContainer} onPress={handleAccountDetailsPress}>
+                                <FontAwesome name="money" size={24} color="gray" />
+                                <View style={styles.walletDetails}>
+                                    <Text>Account Number: {accountNumber}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 );
             case 'Kredit':
@@ -51,40 +55,30 @@ export const DetailsPage = ({ route }) => {
         }
     };
 
-    // Assuming `item.cif` is defined and available
     const jsonData = JSON.stringify({ type: 'customer', cif: item.cif });
-
-    // Encode JSON data to base64
     const base64Data = Buffer.from(jsonData).toString('base64');
 
     return (
         <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.navigate('CustomerList')} style={styles.backButton}>
-                    <FontAwesome name="arrow-left" size={18} color="black" />
+                    <FontAwesome name="arrow-left" size={18} color="white" />
                 </TouchableOpacity>
                 <Text style={styles.title}>{item.full_name}</Text>
             </View>
 
             <View style={styles.container}>
-                {/* QR Code Display */}
-                <QRCode
-                    value={base64Data || 'default'}
-                    size={150} // Adjust size as needed
-                />
+                <QRCode value={base64Data || 'default'} size={150} />
 
-                {/* Print Ecpos Printer  */}
                 <TouchableOpacity style={styles.printButton}>
                     <Text style={styles.printText}>PRINT</Text>
                 </TouchableOpacity>
 
-                {/* User Information */}
                 <View style={styles.smallInfoCard}>
                     <Text style={styles.smallLabel}>Nama Lengkap</Text>
                     <Text style={styles.smallInfo}>{item.full_name}</Text>
                 </View>
 
-                {/* CIF and No. Handphone side-by-side */}
                 <View style={styles.horizontalRow}>
                     <View style={styles.smallInfoCardHalf}>
                         <Text style={styles.smallLabel}>CIF</Text>
@@ -106,7 +100,6 @@ export const DetailsPage = ({ route }) => {
                     <Text style={styles.info}>{item.address}</Text>
                 </View>
 
-                {/* Tab Navigation */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         style={[styles.tabButton, activeTab === 'Tabungan' && styles.activeTab]}
@@ -128,11 +121,9 @@ export const DetailsPage = ({ route }) => {
                     </TouchableOpacity>
                 </View>
 
-                {/* Render Tab Content */}
                 <View style={styles.tabContentContainer}>
                     {renderContent()}
                 </View>
-
             </View>
         </Screen>
     );
@@ -141,13 +132,18 @@ export const DetailsPage = ({ route }) => {
 const styles = StyleSheet.create({
     activeTab: {
         borderBottomColor: '#007bff',
+        borderBottomWidth: 2,
     },
     activeTabText: {
         color: '#007bff',
         fontSize: 16,
+        fontWeight: '600',
     },
     backButton: {
         marginRight: 8,
+        padding: 8,
+        backgroundColor: '#007bff',
+        borderRadius: 8,
     },
     container: {
         alignItems: 'center',
@@ -156,7 +152,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: "center",
-        backgroundColor: "white",
+        backgroundColor: "#007bff",
         flexDirection: "row",
         paddingLeft: spacing.lg,
         paddingVertical: 24,
@@ -166,7 +162,6 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     horizontalRow: {
-        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 15,
@@ -174,31 +169,31 @@ const styles = StyleSheet.create({
     },
     info: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
+        color: '#333',
         marginTop: 5,
     },
     infoCard: {
         backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 5,
+        borderRadius: 15,
         marginTop: 10,
-        padding: 5,
+        padding: 15,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
         width: '100%',
     },
     label: {
-        color: 'gray',
+        color: '#666',
         fontSize: 14,
     },
     printButton: {
         backgroundColor: '#007bff',
-        borderRadius: 5,
+        borderRadius: 8,
         marginTop: 20,
-        paddingHorizontal: 50,
-        paddingVertical: 5,
+        paddingHorizontal: 60,
+        paddingVertical: 10,
     },
     printText: {
         color: 'white',
@@ -212,83 +207,81 @@ const styles = StyleSheet.create({
     },
     smallInfo: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '500',
         marginTop: 3,
+        color: '#333',
     },
     smallInfoCard: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 5,
+        backgroundColor: '#f8f8f8',
+        borderRadius: 15,
         marginTop: 10,
-        padding: 5,
+        padding: 10,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
         width: '100%',
     },
     smallInfoCardHalf: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 5,
-        marginTop: 10,
-        padding: 5,
+        backgroundColor: '#f8f8f8',
+        borderRadius: 15,
+        padding: 10,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
         width: '48%',
     },
     smallLabel: {
-        color: 'gray',
+        color: '#888',
         fontSize: 12,
     },
     tabButton: {
         alignItems: 'center',
-        borderBottomColor: 'transparent',
-        borderBottomWidth: 2,
-        flex: 1,
-        padding: 15,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     tabContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 20,
-        width: '100%',
+        justifyContent: 'center',
+        marginTop: 30,
     },
     tabContent: {
+        color: '#666',
         fontSize: 18,
-        marginTop: 20,
-        textAlign: 'center',
     },
     tabContentContainer: {
-        marginTop: 20,
-        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 30,
+        padding: 20,
     },
     tabText: {
-        color: 'gray',
+        color: '#666',
         fontSize: 16,
+        fontWeight: '500',
     },
     title: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: "bold",
+        color: "white",
+        textAlign: "center",
+        textTransform: "capitalize",
     },
     walletContainer: {
         alignItems: 'center',
+        backgroundColor: '#f8f8f8',
+        borderRadius: 15,
         flexDirection: 'row',
-        marginTop: 20,
+        marginTop: -30,
+        padding: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        width: '100%',
     },
     walletDetails: {
-        flexDirection: 'column',
-        marginLeft: 25,
-    },
-    walletLabel: {
-        color: 'gray',
-        fontSize: 14,
-        marginTop: 5,
-    },
-    walletText: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        marginLeft: 20,
     },
 });

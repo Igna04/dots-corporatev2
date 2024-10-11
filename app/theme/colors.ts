@@ -35,6 +35,16 @@ const palette = {
 
   overlay20: "rgba(25, 16, 21, 0.2)",
   overlay50: "rgba(25, 16, 21, 0.5)",
+
+  
+  // Background
+  primaryColor: "#0074D9",
+  secondryColor: "#2f86ff",
+  
+  
+  
+  // Text
+  primaryText: "#FFF",
 } as const
 
 export const colors = {
@@ -44,6 +54,9 @@ export const colors = {
    * semantic names as much as possible.
    */
   palette,
+  primaryColor: palette.primaryColor,
+  primaryText: palette.primaryText,
+  secondaryColor:palette.secondryColor,
   /**
    * A helper for making something see-thru.
    */

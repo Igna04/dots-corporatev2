@@ -13,18 +13,28 @@ export const CustomDrawer = () => {
     <View style={[styles.drawer1, styles.drawerInsets1]}>
       <View style={styles.logoContainer1}>
         {/* <Image source={logo} style={styles.logoImage1} /> */}
+        {/* <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("SavingDeposit")}>
+            <FontAwesome name="money" size={20} style={styles.menuIcon1} />
+            <Text style={styles.menuText1}>Setoran Tabungan (offline)</Text>
+          </TouchableOpacity> */}
         <View style={styles.menuContainer1}>
           <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("CustomerList")}>
             <FontAwesome name="user" size={20} style={styles.menuIcon1} />
             <Text style={styles.menuText1}>Daftar Nasabah</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("SavingDeposit")}>
-            <FontAwesome name="money" size={20} style={styles.menuIcon1} />
-            <Text style={styles.menuText1}>Setoran Tabungan (offline)</Text>
-          </TouchableOpacity>
+
           <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("TransactionHistory")}>
             <FontAwesome name="history" size={20} style={styles.menuIcon1} />
             <Text style={styles.menuText1}>Sejarah Transaksi</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("AllBatch")}>
+            <FontAwesome name="list" size={20} style={styles.menuIcon1} />
+            <Text style={styles.menuText1}>All Batch</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("Loan")}>
+            <FontAwesome name="file-text" size={20} style={styles.menuIcon1} />
+            <Text style={styles.menuText1}>Pengajuan Peminjaman</Text>
           </TouchableOpacity>
         </View>
       </View>

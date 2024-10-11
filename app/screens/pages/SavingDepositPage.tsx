@@ -46,14 +46,14 @@ export const SavingDepositPage = () => {
     return (
         <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation.navigate('DemoShowroom')} style={styles.backButton}>
                     <FontAwesome name="arrow-left" size={18} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Setoran Tabungan</Text>
             </View>
 
             <View style={styles.container}>
-                <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate("SearchAccountPage")}>
+                <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate("SearchAccount")}>
                     <Text style={styles.searchButtonText}>Cari Rekening</Text>
                 </TouchableOpacity>
 

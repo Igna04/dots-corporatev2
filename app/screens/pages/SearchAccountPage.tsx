@@ -39,16 +39,16 @@ export const SearchAccountPage = () => {
     const handleCardPress = (item: { name: string; address: string; cif: string; }) => {
         // Navigate to SavingDepositPage with params
         navigation.navigate("SavingDepositPage", {
-          nomorRekening: item.cif,
-          namaNasabah: item.name,
-          alamatNasabah: item.address,
+            nomorRekening: item.cif,
+            namaNasabah: item.name,
+            alamatNasabah: item.address,
         });
-      };
+    };
 
     return (
         <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation.navigate('SavingDeposit')} style={styles.backButton}>
                     <FontAwesome name="arrow-left" size={18} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Fasilitas Nasabah</Text>

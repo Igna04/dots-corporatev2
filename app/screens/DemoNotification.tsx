@@ -4,7 +4,7 @@ import React, { FC, useState } from "react"
 import { View, ViewStyle, StyleSheet } from "react-native"
 import { Screen, Text } from "../components"
 import { DemoTabScreenProps } from "../navigators/DemoNavigator"
-import { spacing } from "../theme"
+import { colors, spacing } from "../theme"
 import { Drawer } from "react-native-drawer-layout"
 import { isRTL } from "../i18n"
 import { CustomDrawer } from "./CustomDrawer"
@@ -46,7 +46,7 @@ export const DemoPodcastListScreen: FC<DemoTabScreenProps<"DemoPodcastList">> = 
 const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: colors.primaryColor,
     flexDirection: "row",
     paddingVertical: spacing.sm,
     position: "absolute",
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerText: {
-    color: "#000",
+    color: colors.primaryText,
     fontSize: 20,
     fontWeight: "bold",
   },

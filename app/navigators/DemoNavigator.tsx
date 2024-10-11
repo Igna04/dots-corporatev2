@@ -42,20 +42,6 @@ export type DemoTabScreenProps<T extends keyof DemoTabParamList> = CompositeScre
 >
 
 const Tab = createBottomTabNavigator<DemoTabParamList>()
-const Stack = createStackNavigator<RootStackParamList>();
-
-
-
-function SearchAccountPageStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="SearchAccountPage" component={SearchAccountPage} />
-      <Stack.Screen name="SavingDepositPage" component={SavingDepositPage} />
-    </Stack.Navigator>
-  )
-}
-
-
 
 export function DemoShowroomScreens() {
   return (
@@ -97,7 +83,7 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Beranda",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="home" color={focused ? colors.tint : undefined} size={38} />
+            <FontAwesome name="home" color={focused ? colors.primaryColor : undefined} size={38} />
           ),
         }}
       />
@@ -108,7 +94,7 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Aktivitas",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="list-alt" color={focused ? colors.tint : undefined} size={30} />
+            <FontAwesome name="list-alt" color={focused ? colors.primaryColor : undefined} size={30} />
           ),
         }}
       />
@@ -139,7 +125,7 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Notifikasi",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="bell" color={focused ? colors.tint : undefined} size={30} />
+            <FontAwesome name="bell" color={focused ? colors.primaryColor : undefined} size={30} />
           ),
         }}
       />
@@ -150,24 +136,10 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Pengaturan",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="cog" color={focused ? colors.tint : undefined} size={30} />
+            <FontAwesome name="cog" color={focused ? colors.primaryColor : undefined} size={30} />
           ),
         }}
       />
-
-
-
-
-      {/* ==================== Bukan Bottom Navigasi ==================== */}
-    
-      <Tab.Screen
-        name="SearchAccountPage"
-        component={SearchAccountPageStack}
-        options={{ tabBarButton: () => null }}
-      />
-
-
-
 
     </Tab.Navigator>
   )
@@ -194,7 +166,7 @@ const $qrButtonContainer: ViewStyle = {
   height: 70,
   width: 70,
   borderRadius: 35,
-  backgroundColor: 'darkorange',
+  backgroundColor: colors.primaryColor,
   alignItems: "center",
   justifyContent: "center",
   shadowOffset: { width: 0, height: 2 },

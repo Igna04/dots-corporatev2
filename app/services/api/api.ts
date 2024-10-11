@@ -1,71 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// import { ApiResponse, ApisauceInstance, create } from "apisauce";
-// import type { ApiConfig } from "./api.types";
-// import { ApiResponse } from "apisauce";
-// import { GeneralApiProblem, getGeneralApiProblem } from "./apiProblem";
+// Ensure the imports are correct
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
-// export const DEFAULT_API_CONFIG: ApiConfig = {
-//   url: "http://192.168.18.223:8050/api", // Base URL baru dari API Anda
-//   timeout: 10000,
-// };
-
-
-
-/**
- * Kelas utama untuk manajemen API.
- */
-export interface LoginSchema {
-  username: string;
-  password: string;
-}
-
-export interface BearerTokenSchema {
-  access_token: string;
-  refresh_token: string | null;
-}
 
 export const BaseApi = {
   url: "https://api-core-staging.dotsco.re/api",
   timeout: 10000,
-}
-
+};
 
 export class Api {
-  /*
-  apisauce: ApisauceInstance;
-  config: ApiConfig;
-
-  constructor(config: ApiConfig = DEFAULT_API_CONFIG) {
-    this.config = config;
-    this.apisauce = create({
-      baseURL: this.config.url,
-      timeout: this.config.timeout,
-      headers: {
-        Accept: "application/json",
-      },
-    });
-  }
- */
-
   /**
-    * ==================== GET METHOD ====================
-  */
+   * ==================== GET METHOD ====================
+   */
 
-  /** (DONE)
-     * Api mendapatkan seluruh customer. Menggunkan Fetch Data dan AsynStorage (seperti local storage) untuk passing token
-     * @param {string} kind - mengidentifikasi status dari respons yang diterima dari fungsi
-     * @param {any} customers - array untuk menaruh seluruh data customers.
-     * 
-     * "bad-data" dan undefined dieksekusi ketika permintaan (request) untuk mengambil data pelanggan tidak berhasil.
-     */
   async getAllCustomers(): Promise<{ kind: "ok"; customers: any[] } | { kind: "bad-data" } | undefined> {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      const kodeKantor = await AsyncStorage.getItem('kodeKantor'); // Retrieve kodeKantor
-      console.log("Token retrieved:", token);
-      console.log("Kode Kantor retrieved:", kodeKantor);
+      const kodeKantor = await AsyncStorage.getItem('kodeKantor');
 
       if (!token || !kodeKantor) {
         console.error("Token or Kode Kantor not found! Make sure the user is logged in.");
@@ -75,9 +24,9 @@ export class Api {
       const response = await fetch(`${BaseApi.url}/core/customers`, {
         method: "GET",
         headers: {
-          'Accept': 'application/json',
-          'X-Tenant-Id': kodeKantor, // Use kodeKantor from AsyncStorage
-          'Authorization': `Bearer ${token}`,
+          Accept: 'application/json',
+          'X-Tenant-Id': kodeKantor,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -87,8 +36,6 @@ export class Api {
       }
 
       const data = await response.json();
-      console.log("Customers data:", data);
-
       return { kind: "ok", customers: data || [] };
     } catch (error) {
       console.error("Error retrieving customers:", error);
@@ -96,25 +43,97 @@ export class Api {
     }
   }
 
+  /**
+   * Fetch customer savings data based on CIF.
+   * @param {string} cif - Customer Information File identifier.
+   * @returns {Promise<{ kind: "ok"; savings: any } | { kind: "bad-data" } | undefined>}
+   */
+  async getCustomerSavingsByCif(
+    cif: string,
+  ): Promise<{ kind: "ok"; savings: any } | { kind: "bad-data" } | undefined> {
+    try {
+      const token = await AsyncStorage.getItem("authToken")
+      const kodeKantor = await AsyncStorage.getItem("kodeKantor") // Retrieve kodeKantor
 
+      if (!token || !kodeKantor) {
+        console.error("Token or Kode Kantor not found! Make sure the user is logged in.")
+        return { kind: "bad-data" }
+      }
+
+      const response = await fetch(`${BaseApi.url}/core/customers/${cif}/savings`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Tenant-Id": kodeKantor, // Use kodeKantor from AsyncStorage
+        },
+      })
+
+      if (!response.ok) {
+        console.error(
+          "Failed to fetch savings for customer with CIF:",
+          cif,
+          ". Status:",
+          response.status,
+        )
+        return { kind: "bad-data" }
+      }
+
+      const data = await response.json()
+      console.log("Savings data:", data)
+
+      return { kind: "ok", savings: data || [] }
+    } catch (error) {
+      console.error("Error retrieving savings for CIF:", cif, error)
+      return undefined
+    }
+  }
+
+  // Fungsi untuk mendapatkan daftar batch transaksi
+  async getTransactionBatches() {
+    try {
+      const token = await AsyncStorage.getItem("authToken")
+      const kodeKantor = await AsyncStorage.getItem("kodeKantor") // Retrieve kodeKantor
+
+      if (!token || !kodeKantor) {
+        console.error("Token or Kode Kantor not found! Make sure the user is logged in.")
+        return { kind: "bad-data" }
+      }
+
+      const response = await fetch(`${BaseApi.url}/mobile-corporate/transaction-batches`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Tenant-Id": kodeKantor, // Use kodeKantor from AsyncStorage
+        },
+      })
+
+      if (!response.ok) {
+        console.error("Failed to fetch transaction batches")
+        return { kind: "bad-data" }
+      }
+
+      const data = await response.json()
+      console.log("API Data:", data) // Log data yang diterima dari API
+      return { kind: "ok", transactionBatches: data }
+    } catch (error) {
+      console.error("Error in getTransactionBatches:", error)
+      return { kind: "bad-data" }
+    }
+  }
 
   /**
-    * ==================== POST METHOD ====================
-  */
-
-  /** (DONE)
-   * Fungsi Authentikasi User
-   * @param {string} username - username user.
-   * @param {string} password - password user.
+   * ==================== POST METHOD ====================
    */
-  async login(username: string, password: string, kodeKantor: number) { // Change to number type
+
+  async login(username: string, password: string, kodeKantor: number) {
     try {
-      // Convert kodeKantor to string for the header
       const response = await fetch(`${BaseApi.url}/authentication/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Tenant-Id': kodeKantor.toString(), // Use Kode Kantor here as a string
+          'X-Tenant-Id': kodeKantor.toString(),
         },
         body: JSON.stringify({
           username,
@@ -124,7 +143,6 @@ export class Api {
 
       if (!response.ok) {
         const errorResponse = await response.text();
-        console.error('Error response:', errorResponse);
         throw new Error(`Login failed: ${response.status} ${errorResponse}`);
       }
 
@@ -136,7 +154,54 @@ export class Api {
     }
   }
 
+  async createTransactionBatch(
+    id: string,
+    createdBy: number,
+    status: number,
+    branchId: string,
+    coreTrxGroupId: string,
+    isActive: boolean = true
+  ) {
 
+    try {
+      const kodeKantor = await AsyncStorage.getItem('kodeKantor');
+
+      if (!kodeKantor) {
+        console.error("Kode Kantor not found! Make sure the user is logged in.");
+        return { kind: "bad-data" };
+      }
+      const response = await fetch(`${BaseApi.url}/mobile-corporate/transaction-batches`, {
+
+
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': kodeKantor.toString(),
+
+        },
+        body: JSON.stringify({
+          id,
+          created_by: createdBy,
+          created_at: new Date().toISOString(),
+          status,
+          branch_id: branchId,
+          is_active: isActive,
+          core_trx_group_id: coreTrxGroupId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.text();
+        throw new Error(`API request failed: ${response.status} ${errorResponse}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('API request error:', error);
+      throw error;
+    }
+  }
 }
 
 export const api = new Api();

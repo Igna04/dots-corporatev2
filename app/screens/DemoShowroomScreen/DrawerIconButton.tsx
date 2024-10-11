@@ -27,7 +27,7 @@ export function DrawerIconButton(props: DrawerIconButtonProps) {
   })
 
   const animatedTopBarStyles = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.tint])
+    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.text])
     const marginStart = interpolate(progress.value, [0, 1], [0, -11.5])
     const rotate = interpolate(progress.value, [0, 1], [0, isRTL ? 45 : -45])
     const marginBottom = interpolate(progress.value, [0, 1], [0, -2])
@@ -49,7 +49,7 @@ export function DrawerIconButton(props: DrawerIconButtonProps) {
   })
 
   const animatedMiddleBarStyles = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.tint])
+    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.text])
     const width = interpolate(progress.value, [0, 1], [18, 16])
 
     return {
@@ -60,7 +60,7 @@ export function DrawerIconButton(props: DrawerIconButtonProps) {
 
   const animatedBottomBarStyles = useAnimatedStyle(() => {
     const marginTop = interpolate(progress.value, [0, 1], [4, 2])
-    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.tint])
+    const backgroundColor = interpolateColor(progress.value, [0, 1], [colors.text, colors.text])
     const marginStart = interpolate(progress.value, [0, 1], [0, -11.5])
     const rotate = interpolate(progress.value, [0, 1], [0, isRTL ? -45 : 45])
     const width = interpolate(progress.value, [0, 1], [18, 12])

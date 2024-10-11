@@ -4,7 +4,7 @@ import React, { FC, useState } from "react";
 import { View, ViewStyle, StyleSheet, FlatList } from "react-native";
 import { Screen, Text } from "../components";
 import { DemoTabScreenProps } from "../navigators/DemoNavigator";
-import { spacing } from "../theme";
+import { colors, spacing } from "../theme";
 import { Button } from "../components/Button";
 import { CustomDrawer } from "./CustomDrawer";
 import { Drawer } from "react-native-drawer-layout";
@@ -55,8 +55,8 @@ export const DemoCommunityScreen: FC<DemoTabScreenProps<"DemoCommunity">> = func
     >
       <Screen preset="fixed" contentContainerStyle={$container} safeAreaEdges={["top"]}>
         <View style={styles.headerContainer}>
-            <DrawerIconButton onPress={toggleDrawer} />
-            <Text style={styles.headerText}>Komunitas</Text>
+          <DrawerIconButton onPress={toggleDrawer} />
+          <Text style={styles.headerText}>Aktivitas</Text>
           <Button
             text="+ Tambah"
             preset="default"
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginRight:10,
+    marginRight: 10,
   },
   buttonText: {
     color: "white",
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: colors.primaryColor,
     flexDirection: "row",
     justifyContent: "space-between", // Distribute space evenly
     paddingVertical: spacing.sm,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   headerText: {
-    color: "#000",
+    color: colors.primaryText,
     fontSize: 20,
     fontWeight: "bold",
     flex: 1, // Allow text to take up available space
