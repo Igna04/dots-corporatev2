@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-color-literals */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react"
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Screen, Text } from "../../components";
@@ -7,53 +7,100 @@ import { spacing } from "app/theme";
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { Buffer } from 'buffer';
+import { BluetoothEscposPrinter } from 'react-native-bluetooth-escpos-printer';
+import { api } from "../../services/api" // Import the api
 
 export const DetailsPage = ({ route }) => {
-    const navigation = useNavigation();
-    const [activeTab, setActiveTab] = useState('Tabungan');
-    const { item, accountNumber } = route.params || {
-        item: {
-            name: 'No Name',
-            cif: 'No CIF',
-            phone: '-',
-            email: '-',
-            address: 'No Address'
-        }
-    };
+    const navigation = useNavigation()
+    const [activeTab, setActiveTab] = useState("Tabungan")
+    const { item, accountNumber, initial_balance, final_balance } = route.params || {
+      item: {
+        name: "No Name",
+        cif: "No CIF",
+        phone: "-",
+        email: "-",
+        address: "No Address",
+      },
+    }
+    const [loansData, setLoansData] = useState([]) // State to store loans data
 
-    const handleAccountDetailsPress = () => {
-        navigation.navigate('AccountDetails', {
-            accountNumber: accountNumber,
-            name: item.full_name, // Ganti ini untuk mengirim name
-        });
-        console.log('Navigating to AccountDetails with data:');
-        console.log('Account Number:', accountNumber);
-        console.log('Customer Name:', item.full_name); // Tambahkan log untuk memeriksa nama
-    };
+    // Function to fetch customer loans by CIF
+    const fetchCustomerLoans = async () => {
+    const response = await api.getCustomerLoansByCif(item.cif)
 
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'Tabungan':
-                return (
-                    <View>
-                        {accountNumber ? (
-                            <TouchableOpacity style={styles.walletContainer} onPress={handleAccountDetailsPress}>
-                                <FontAwesome name="money" size={24} color="gray" />
-                                <View style={styles.walletDetails}>
-                                    <Text>Account Number: {accountNumber}</Text>
-                                </View>
-                            </TouchableOpacity>
-                        ) : null}
-                    </View>
-                );
-            case 'Kredit':
-                return <Text style={styles.tabContent}>Data Kredit</Text>;
-            case 'Log':
-                return <Text style={styles.tabContent}>Data Log</Text>;
-            default:
-                return null;
-        }
-    };
+    if (response?.kind === "ok" && response.loans.length > 0) {
+      console.log("Loans data found:", response.loans)
+      setLoansData(response.loans) // Set the loans data
+    } else {
+      console.log("No loans data found for CIF:", item.cif)
+      setLoansData([]) // Set loans data as empty if none found
+    }
+  }
+
+  useEffect(() => {
+    fetchCustomerLoans() // Fetch loans data when component mounts
+  }, [])
+
+  const handleAccountDetailsPress = () => {
+    navigation.navigate("AccountDetails", {
+      accountNumber: accountNumber,
+      name: item.full_name,
+      cif: item.cif,
+      phone: item.phone,
+      email: item.email,
+      address: item.address,
+      initial_balance, // Kirim initial_balance
+      final_balance,
+    })
+    console.log("Navigating to AccountDetails with data:")
+    console.log("Received data in DetailsPage:", {
+      item,
+      accountNumber,
+      initial_balance,
+      final_balance,
+    })
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "Tabungan":
+        return (
+          <View>
+            {accountNumber ? (
+              <TouchableOpacity style={styles.walletContainer} onPress={handleAccountDetailsPress}>
+                <FontAwesome name="money" size={24} color="gray" />
+                <View style={styles.walletDetails}>
+                  <Text>Nomor Rekening: {accountNumber}</Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.tabContent}>No saving data available</Text> // Pesan jika tidak ada tabungan
+            )}
+          </View>
+        )
+      case "Kredit":
+        return (
+          <View>
+            {loansData.length > 0 ? (
+              loansData.map((loan, index) => (
+                <TouchableOpacity key={index} style={styles.walletContainer}>
+                  <FontAwesome name="credit-card" size={24} color="gray" />
+                  <View style={styles.walletDetails}>
+                    <Text>Account Number: {accountNumber}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.tabContent}>No loan data available</Text>
+            )}
+          </View>
+        )
+      case "Log":
+        return <Text style={styles.tabContent}>No log data available</Text>
+      default:
+        return null
+    }
+  }
 
     const jsonData = JSON.stringify({ type: 'customer', cif: item.cif });
     const base64Data = Buffer.from(jsonData).toString('base64');
@@ -67,12 +114,32 @@ export const DetailsPage = ({ route }) => {
                 <Text style={styles.title}>{item.full_name}</Text>
             </View>
 
+
             <View style={styles.container}>
                 <QRCode value={base64Data || 'default'} size={150} />
 
-                <TouchableOpacity style={styles.printButton}>
+
+
+                <TouchableOpacity
+                    onPress={async () => {
+                        try {
+                            // Mencetak QR code dengan nilai dari base64Data
+                            await BluetoothEscposPrinter.printQRCode(
+                                base64Data || 'default', // Hanya kirim string, bukan komponen
+                                280,
+                                BluetoothEscposPrinter.ERROR_CORRECTION.L
+                            );
+                            await BluetoothEscposPrinter.printText('\r\n\r\n\r\n', {}); // Menambahkan spasi setelah QR code
+                        } catch (error) {
+                            console.error('Error printing QR code:', error);
+                        }
+                    }}
+                    style={styles.printButton}
+                >
                     <Text style={styles.printText}>PRINT</Text>
                 </TouchableOpacity>
+
+
 
                 <View style={styles.smallInfoCard}>
                     <Text style={styles.smallLabel}>Nama Lengkap</Text>

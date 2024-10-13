@@ -10,21 +10,39 @@ import { Drawer } from "react-native-drawer-layout"
 import { isRTL } from "../i18n"
 import { CustomDrawer } from "./CustomDrawer"
 import { DrawerIconButton } from "./DemoShowroomScreen/DrawerIconButton"
-import { openLinkInBrowser } from "app/utils/openLinkInBrowser"
 import { useNavigation } from "@react-navigation/native"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function DemoDebugScreen(
   _props,
 ) {
-  const {
-    authenticationStore: { logout },
-  } = useStores()
+  const { authenticationStore: { logout } } = useStores()
 
   const [open, setOpen] = useState(false)
 
   const navigation = useNavigation()
   const toggleDrawer = () => {
     setOpen(!open)
+  }
+
+  const handleLogout = async () => {
+    try {
+      // Remove the auth token
+      await AsyncStorage.removeItem('authToken')
+
+      // Call the logout function from the authentication store
+      await logout()
+
+      // Redirect to the login page
+      // Note: Replace 'Login' with the actual name of your login screen in the navigation stack
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      })
+    } catch (error) {
+      console.error('Error during logout:', error)
+      // Handle any errors that occur during the logout process
+    }
   }
 
   return (
@@ -55,7 +73,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
         </View>
 
         <View style={$buttonContainer}>
-          <Button style={$logoutButton} onPress={logout}>
+          <Button style={$logoutButton} onPress={handleLogout}>
             <View style={$buttonContent}>
               <Image source={require("../assets/img/Move_object.png")} style={$logoutIcon} />
               <Text style={$logoutButtonText}>Keluar</Text>
@@ -66,6 +84,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
     </Drawer>
   )
 }
+
 
 // Style yang disesuaikan dari DemoPodcastListScreen
 const styles = StyleSheet.create({

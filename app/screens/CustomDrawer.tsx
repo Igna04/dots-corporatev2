@@ -2,9 +2,10 @@
 /* eslint-disable react-native/no-color-literals */
 // CustomDrawer.tsx
 import React from "react"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Image, ViewStyle } from "react-native"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 import { useNavigation } from "@react-navigation/native"
+import { spacing } from "app/theme"
 
 export const CustomDrawer = () => {
   const navigation = useNavigation()
@@ -12,11 +13,7 @@ export const CustomDrawer = () => {
   return (
     <View style={[styles.drawer1, styles.drawerInsets1]}>
       <View style={styles.logoContainer1}>
-        {/* <Image source={logo} style={styles.logoImage1} /> */}
-        {/* <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("SavingDeposit")}>
-            <FontAwesome name="money" size={20} style={styles.menuIcon1} />
-            <Text style={styles.menuText1}>Setoran Tabungan (offline)</Text>
-          </TouchableOpacity> */}
+        <Image source={require("../assets/img/dots_logo.png")} style={$logoStyle} />
         <View style={styles.menuContainer1}>
           <TouchableOpacity style={styles.menuItem1} onPress={() => navigation.navigate("CustomerList")}>
             <FontAwesome name="user" size={20} style={styles.menuIcon1} />
@@ -41,7 +38,12 @@ export const CustomDrawer = () => {
     </View>
   )
 }
-
+const $logoStyle: ViewStyle = {
+  alignSelf: "center",
+  marginTop: 10,
+  width: 150, // Sesuaikan ukuran sesuai kebutuhan
+  resizeMode: 'contain' // Agar gambar tetap dalam proporsi
+};
 const styles = StyleSheet.create({
   drawer1: {
     backgroundColor: '#fff',
@@ -56,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   menuContainer1: {
-    paddingTop: 90,
+    paddingTop: 20,
     width: '100%',
   },
   menuIcon1: {

@@ -21,7 +21,22 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
   const [attemptsCount, setAttemptsCount] = useState(0);
 
   // Use the MobX store
-  const { authenticationStore } = useStores(); 
+  const { authenticationStore } = useStores();
+
+  const getTokenAwal = async () => {
+    try {
+      const tokenAwal = await AsyncStorage.getItem("authToken");
+      return tokenAwal;
+    } catch (error) {
+      console.error("Error retrieving token:", error);
+      return null;
+    }
+  };
+
+  // Usage
+  getTokenAwal().then(tokenAwal => {
+    console.log("Token Awal:", tokenAwal);
+  });
 
   // Reset fields after login or when unmounted
   useEffect(() => {
@@ -36,33 +51,33 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
   async function login() {
     setIsSubmitted(true);
     setAttemptsCount(attemptsCount + 1);
-  
+
     console.log("Starting login...");
-  
+
     // Check validation error from store
     if (authenticationStore.validationError) {
       console.error("Validation Error:", authenticationStore.validationError);
       return; // Prevent login if validation fails
     }
-  
+
     // Validate password locally
     if (!authPassword.trim()) {
       console.error("Validation Error: Password can't be blank.");
       return;
     }
-  
+
     try {
       console.log("Sending login request...");
-  
+
       // Convert kodeKantor to an integer
       const kodeKantorInt = parseInt(authenticationStore.kodeKantor, 10);
       const token = await api.login(authenticationStore.authUsername, authPassword, kodeKantorInt); // Pass store values
-  
+
       if (token) {
         await AsyncStorage.setItem('authToken', token.access_token);
         await AsyncStorage.setItem('kodeKantor', authenticationStore.kodeKantor); // Store kodeKantor
         authenticationStore.setAuthToken(token.access_token);
-  
+
         console.log("Login successful, token:", token.access_token);
         setAuthPassword(""); // Clear password after successful login
         authenticationStore.setAuthUsername(""); // Clear username
@@ -73,10 +88,10 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
     } catch (error) {
       console.error("Error during login:", error);
     }
-  
+
     setIsSubmitted(false);
   }
-  
+
 
   // Password field accessory for toggling visibility
   const PasswordRightAccessory: ComponentType<TextFieldAccessoryProps> = useMemo(

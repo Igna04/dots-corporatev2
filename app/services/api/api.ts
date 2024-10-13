@@ -89,6 +89,57 @@ export class Api {
     }
   }
 
+  /**
+   * Fetch customer loans data based on CIF.
+   * @param {string} cif - Customer Information File identifier.
+   * @returns {Promise<{ kind: "ok"; loans: any } | { kind: "bad-data" } | undefined>}
+   */
+  async getCustomerLoansByCif(
+    cif: string,
+  ): Promise<{ kind: "ok"; loans: any } | { kind: "bad-data" } | undefined> {
+    try {
+      const token = await AsyncStorage.getItem("authToken")
+      const kodeKantor = await AsyncStorage.getItem("kodeKantor") // Retrieve kodeKantor
+
+      if (!token || !kodeKantor) {
+        console.error("Token or Kode Kantor not found! Make sure the user is logged in.")
+        return { kind: "bad-data" }
+      }
+
+      const response = await fetch(`${BaseApi.url}/core/customers/${cif}/loans`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Tenant-Id": kodeKantor, // Use kodeKantor from AsyncStorage
+        },
+      })
+
+      if (!response.ok) {
+        console.error(
+          "Failed to fetch loans for customer with CIF:",
+          cif,
+          ". Status:",
+          response.status,
+        )
+        return { kind: "bad-data" }
+      }
+
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        console.log("Loans data found:", data)
+      } else {
+        console.log("No loans data found for CIF:", cif)
+      }
+
+      return { kind: "ok", loans: data || [] }
+    } catch (error) {
+      console.error("Error retrieving loans for CIF:", cif, error)
+      return undefined
+    }
+  }
+
   // Fungsi untuk mendapatkan daftar batch transaksi
   async getTransactionBatches() {
     try {
@@ -123,6 +174,50 @@ export class Api {
     }
   }
 
+  async getTransactionBatchById(
+    id: string
+  ): Promise<{ kind: "ok"; transactionBatch: any } | { kind: "bad-data" } | undefined> {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const kodeKantor = await AsyncStorage.getItem("kodeKantor");
+
+      if (!token || !kodeKantor) {
+        console.error("Token or Kode Kantor not found! Make sure the user is logged in.");
+        return { kind: "bad-data" };
+      }
+
+      const response = await fetch(`${BaseApi.url}/mobile-corporate/transaction-batches/${id}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Tenant-Id": kodeKantor,
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Failed to fetch transaction batch with ID:",
+          id,
+          ". Status:",
+          response.status
+        );
+        return { kind: "bad-data" };
+      }
+
+      const data = await response.json();
+      console.log("Transaction batch data:", data);
+
+      return { kind: "ok", transactionBatch: data };
+    } catch (error) {
+      console.error("Error retrieving transaction batch with ID:", id, error);
+      return undefined;
+    }
+  }
+
+
+
+
   /**
    * ==================== POST METHOD ====================
    */
@@ -134,6 +229,7 @@ export class Api {
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-Id': kodeKantor.toString(),
+
         },
         body: JSON.stringify({
           username,
@@ -160,11 +256,12 @@ export class Api {
     status: number,
     branchId: string,
     coreTrxGroupId: string,
-    isActive: boolean = true
+    isActive: boolean
   ) {
 
     try {
       const kodeKantor = await AsyncStorage.getItem('kodeKantor');
+      const token = await AsyncStorage.getItem('authToken');
 
       if (!kodeKantor) {
         console.error("Kode Kantor not found! Make sure the user is logged in.");
@@ -177,6 +274,7 @@ export class Api {
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-Id': kodeKantor.toString(),
+          Authorization: `Bearer ${token}`,
 
         },
         body: JSON.stringify({
@@ -184,8 +282,8 @@ export class Api {
           created_by: createdBy,
           created_at: new Date().toISOString(),
           status,
-          branch_id: branchId,
           is_active: isActive,
+          branch_id: branchId,
           core_trx_group_id: coreTrxGroupId,
         }),
       });
@@ -202,6 +300,55 @@ export class Api {
       throw error;
     }
   }
+
+  /**
+   * ==================== PATCH METHOD ====================
+   */
+
+  async updateTransactionBatch(trxBatchId: any, status: any, settledAt: any, settledBy: any, isActive: any) {
+    try {
+      const kodeKantor = await AsyncStorage.getItem('kodeKantor');
+      const token = await AsyncStorage.getItem('authToken');
+
+      if (!kodeKantor) {
+        console.error("Kode Kantor not found! Make sure the user is logged in.");
+        return { kind: "bad-data" };
+      }
+
+      const response = await fetch(`${BaseApi.url}/mobile-corporate/transaction-batches/${trxBatchId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-Id': kodeKantor.toString(),
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status,
+          settled_at: settledAt,
+          settled_by: settledBy,
+          is_active: isActive,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.text();
+        throw new Error(`API request failed: ${response.status} ${errorResponse}`);
+      }
+
+      const data = await response.json();
+      return { success: true, data };
+    } catch (error) {
+      console.error('API request error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+
+
+
 }
+
+
+
 
 export const api = new Api();

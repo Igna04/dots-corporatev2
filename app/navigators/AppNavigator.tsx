@@ -32,6 +32,7 @@ import { DetailsPage } from "app/screens/pages/DetailsPage"
 import { SearchAccountPage } from "app/screens/pages/SearchAccountPage"
 import { LoanPage } from "app/screens/pages/LoanPages";
 import { BluetoothPage } from "app/screens/pages/BluetoothPage"
+import { PrintPage } from "app/screens/pages/PrintPage"
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -62,6 +63,7 @@ export type AppStackParamList = {
   SearchAccount: undefined
   Loan: undefined
   Bluetooth: undefined
+  Print: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
@@ -105,6 +107,7 @@ const AppStack = observer(function AppStack() {
           <Stack.Screen name="Details" component={DetailsPage} />
           <Stack.Screen name="SearchAccount" component={SearchAccountPage} />
           <Stack.Screen name="Bluetooth" component={BluetoothPage} />
+          <Stack.Screen name="Print" component={PrintPage} />
         </>
       ) : (
         <>

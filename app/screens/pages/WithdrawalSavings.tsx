@@ -1,58 +1,54 @@
-/* eslint-disable react-native/no-color-literals */
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
-import { Screen, Text } from "../../components";
-import { spacing } from "app/theme";
+import React, { useEffect, useState } from "react"
+import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native"
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native"
+import { FontAwesome } from "@expo/vector-icons"
+import { Screen, Text } from "../../components"
+import { spacing } from "app/theme"
+import { RootStackParamList } from "app/screens/pages/navigationTypes"
 
-// Definisikan tipe untuk parameter rute (optional, jika menggunakan TypeScript)
-type WithdrawalSavingsRouteProp = {
-  params: {
-    accountNumber: string;
-    namaNasabah: string;
-    alamatNasabah: string;
-  }
-};
+// Define the props for this screen
+type WithdrawalSavingsRouteProp = RouteProp<RootStackParamList, "WithdrawalSavings">
 
 export const WithdrawalSavings = () => {
-  const navigation = useNavigation();
-  const route = useRoute<WithdrawalSavingsRouteProp>();
+  const navigation = useNavigation()
+  const route = useRoute<WithdrawalSavingsRouteProp>()
 
-  // State untuk menampung data form
-  const [nomorRekening, setNomorRekening] = useState(route.params?.accountNumber || "-");
-  const [namaNasabah, setNamaNasabah] = useState(route.params?.namaNasabah || "-");
-  const [alamatNasabah, setAlamatNasabah] = useState(route.params?.alamatNasabah || "-");
-  const [nominal, setNominal] = useState("");
+  // Menerima data dari route.params
+  const { name, accountNumber, cif, phone, email, address, initial_balance, final_balance } =
+    route.params || {}
 
-  // Fungsi untuk memformat angka
+  // Menambahkan konsol log untuk memastikan data diambil dengan benar
+  console.log("Data yang diterima:", {
+    name,
+    accountNumber,
+    cif,
+    phone,
+    email,
+    address,
+    initial_balance,
+    final_balance,
+  })
+
+  // State untuk menyimpan nominal
+  const [nominal, setNominal] = useState("")
+
+  // Fungsi untuk memformat angka menjadi format ribuan
   const formatNominal = (value: string) => {
-    const cleanedValue = value.replace(/[^0-9]/g, "");
-    const formattedValue = new Intl.NumberFormat("id-ID").format(Number(cleanedValue));
-    return formattedValue;
-  };
+    const cleanedValue = value.replace(/[^0-9]/g, "")
+    return new Intl.NumberFormat("id-ID").format(Number(cleanedValue))
+  }
 
-  // Handle perubahan nominal
   const handleNominalChange = (value: string) => {
-    setNominal(formatNominal(value));
-  };
-
-  // Update state saat parameter rute berubah
-  useEffect(() => {
-    if (route.params) {
-      setNomorRekening(route.params.accountNumber || "-");
-      setNamaNasabah(route.params.namaNasabah || "-");
-      setAlamatNasabah(route.params.alamatNasabah || "-");
-    }
-  }, [route.params]);
+    setNominal(formatNominal(value))
+  }
 
   return (
     <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
         {/* Tombol Back */}
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('AccountDetails', { accountNumber: nomorRekening })} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()} // Navigasi kembali
           style={styles.backButton}
         >
           <FontAwesome name="arrow-left" size={18} color="black" />
@@ -65,45 +61,43 @@ export const WithdrawalSavings = () => {
         {/* Input Nomor Rekening */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Nomor Rekening:</Text>
-          <TextInput
-            value={nomorRekening}
-            onChangeText={setNomorRekening}
-            style={styles.input}
-            editable={false} // Non-editable karena diisi dari parameter
-          />
+          <TextInput value={accountNumber || "-"} style={styles.input} editable={false} />
         </View>
 
         {/* Input Nama Nasabah */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Nama Nasabah</Text>
-          <TextInput
-            value={namaNasabah}
-            onChangeText={setNamaNasabah}
-            style={styles.input}
-            editable={false} // Non-editable
-          />
+          <TextInput value={name || "-"} style={styles.input} editable={false} />
         </View>
 
-        {/* Input Alamat Nasabah */}
+        {/* Saldo Saat Ini */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Alamat Nasabah</Text>
+          <Text style={styles.label}>Saldo Saat Ini:</Text>
           <TextInput
-            value={alamatNasabah}
-            onChangeText={setAlamatNasabah}
+            value={final_balance ? formatNominal(final_balance.toString()) : "-"} // Tampilkan final_balance
             style={styles.input}
             editable={false} // Non-editable
           />
         </View>
 
-        {/* Input Nominal Penarikan */}
+        {/* Saldo Dapat Digunakan */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Saldo Dapat Digunakan:</Text>
+          <TextInput
+            value={initial_balance ? formatNominal(initial_balance.toString()) : "-"} // Tampilkan initial_balance
+            style={styles.input}
+            editable={false} // Non-editable
+          />
+        </View>
+
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Nominal</Text>
           <TextInput
             value={nominal}
-            onChangeText={handleNominalChange} // Format nominal saat user mengetik
+            onChangeText={handleNominalChange}
             style={styles.input}
             keyboardType="numeric"
-            placeholder="Masukkan Nominal Penarikan"
+            placeholder="Masukkan Nominal"
           />
         </View>
 
@@ -113,8 +107,8 @@ export const WithdrawalSavings = () => {
         </TouchableOpacity>
       </View>
     </Screen>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   backButton: {
@@ -173,6 +167,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-});
+})
 
-export default WithdrawalSavings;
+export default WithdrawalSavings

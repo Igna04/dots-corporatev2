@@ -8,11 +8,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon-all.png",
-    "splash": {
-      "image": "./assets/images/splash-logo-all.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#191015"
-    },
+  "splash": {
+    "image": "./assets/images/splash-logo-all.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#191015",
+    "width": 100,
+    "height": 100 
+  },
     "updates": {
       "fallbackToCacheTimeout": 0
     },

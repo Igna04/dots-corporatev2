@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     },
     webViewContainer: {
         flex: 1, // Make WebView container take the available space
-        marginTop: spacing.lg + 40, // Adjust margin to avoid overlap with header
+        marginTop: spacing.md, // Adjust margin to avoid overlap with header
         height: 500, // Set specific height if needed
     },
     webView: {

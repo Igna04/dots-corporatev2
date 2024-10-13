@@ -56,7 +56,7 @@ export const AllBatchPage: React.FC = ({ route }) => {
         <Text style={styles.title}>Daftar Batch Transaksi</Text>
       </View>
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
       ) : (
         <ScrollView style={styles.cardContainer}>
           {transactions.length === 0 ? (
@@ -113,11 +113,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
   },
-  historyLink: {
-    color: "#007bff",
-    fontSize: 14,
-    marginTop: 8,
-  },
   header: {
     alignItems: "center",
     backgroundColor: "white",
@@ -130,16 +125,27 @@ const styles = StyleSheet.create({
     width: "100%",
     zIndex: 10,
   },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.xl + 24, // Ensure padding below the header
+  historyLink: {
+    color: "#007bff",
+    fontSize: 14,
+    marginTop: 8,
+  },
+  loader: {
+    alignItems: 'center',
+    display: 'flex',
+    height: '100%',
+    justifyContent: 'center', /* Adjust as needed */
   },
   noDataText: {
     color: "gray",
     fontSize: 16,
     marginTop: 20,
     textAlign: "center",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xl + 24, // Ensure padding below the header
   },
   title: {
     fontSize: 18,
