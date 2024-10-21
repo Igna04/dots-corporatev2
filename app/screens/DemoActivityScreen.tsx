@@ -1,48 +1,80 @@
-/* eslint-disable react-native/sort-styles */
-/* eslint-disable react-native/no-color-literals */
-import React, { FC, useState } from "react";
-import { View, ViewStyle, StyleSheet, FlatList } from "react-native";
-import { Screen, Text } from "../components";
-import { DemoTabScreenProps } from "../navigators/DemoNavigator";
-import { colors, spacing } from "../theme";
-import { Button } from "../components/Button";
-import { CustomDrawer } from "./CustomDrawer";
+import React, { FC, useState, useEffect } from "react";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ViewStyle, Alert } from "react-native";
+import { observer } from "mobx-react-lite";
 import { Drawer } from "react-native-drawer-layout";
+import TaskModal from "../screens/pages/TaskModal";
+import TaskItem from "../screens/pages/TaskItem";
+import TaskStatusFilter from "../screens/pages/TaskStatusFilter";
+import { supabaseClient } from "app/utils/supabaseClient";
+import { colors, spacing } from "../theme";
 import { isRTL } from "../i18n";
+import { CustomDrawer } from "./CustomDrawer";
 import { DrawerIconButton } from "./DemoShowroomScreen/DrawerIconButton";
+import { useNavigation } from "@react-navigation/native";
 
-interface Activity {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  assignedTo: string;
-  attachment: string;
-}
+export const DemoActivityScreen: FC = observer(function DemoActivityScreen() {
+  const [items, setItems] = useState<any[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string>("To Do");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [open, setOpen] = useState(false);
 
-export const DemoCommunityScreen: FC<DemoTabScreenProps<"DemoCommunity">> = function DemoCommunityScreen(
-  { route, navigation }
-) {
-  const { activities } = route.params || { activities: [] }; // Receive the list of activities from route.params
+  const navigation = useNavigation();
 
-  const handleNavigate = () => {
-    navigation.navigate("Activity");
+  const currentDate = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const { data: tasks, error } = await supabaseClient.from("tasks").select("*").eq("date", today);
+
+    if (error) {
+      console.error("Error fetching tasks:", error);
+      return;
+    }
+
+    const newItems: any = {};
+    const strTime = today;
+
+    if (tasks && tasks.length > 0) {
+      newItems[strTime] = tasks.map((task: any) => ({
+        id: task.id,
+        judulKegiatan: task.judul_kegiatan,
+        deskripsiKegiatan: task.deskripsi_kegiatan,
+        waktuKegiatan: task.waktu_kegiatan,
+        nomorTelepon: task.nomor_telepon,
+        status: task.status,
+        date: task.date,
+        comments: task.comments || [],
+        lokasi: task.lokasi,
+        location: task.location,
+        photoUrl: task.photo_url,
+      }));
+    } else {
+      newItems[strTime] = [];
+    }
+
+    setItems(newItems[strTime] || []);
   };
 
-  const [open, setOpen] = useState(false);
+  const filteredItems = items.filter((item) => selectedStatus === "All" || item.status === selectedStatus);
+
+  useEffect(() => {
+    if (filteredItems.length === 0) {
+      Alert.alert("Tidak Ada Kegiatan", `Tidak ada kegiatan untuk status ${selectedStatus}.`);
+    }
+  }, [filteredItems, selectedStatus]);
+
   const toggleDrawer = () => {
     setOpen(!open);
   };
-
-  const renderItem = ({ item }: { item: Activity }) => (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardDescription}>Deskripsi: {item.description}</Text>
-      <Text style={styles.cardDescription}>Tanggal: {item.date}</Text>
-      <Text style={styles.cardDescription}>Ditugaskan: {item.assignedTo}</Text>
-      <Text style={styles.cardDescription}>Lampiran: {item.attachment}</Text>
-    </View>
-  );
 
   return (
     <Drawer
@@ -53,101 +85,112 @@ export const DemoCommunityScreen: FC<DemoTabScreenProps<"DemoCommunity">> = func
       drawerPosition={isRTL ? "right" : "left"}
       renderDrawerContent={() => <CustomDrawer />}
     >
-      <Screen preset="fixed" contentContainerStyle={$container} safeAreaEdges={["top"]}>
+      <View style={$screenContentContainer}>
         <View style={styles.headerContainer}>
           <DrawerIconButton onPress={toggleDrawer} />
           <Text style={styles.headerText}>Aktivitas</Text>
-          <Button
-            text="+ Tambah"
-            preset="default"
-            style={styles.button}
-            textStyle={styles.buttonText}
-            onPress={handleNavigate}
-          />
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+            <Text style={styles.addButtonText}>Tambah</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
-          {activities.length === 0 ? (
-            <Text style={styles.noDataText}>Tidak ada data tersedia</Text>
-          ) : (
-            <FlatList
-              data={activities}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContainer}
+        <View style={styles.filterContainer}>
+          <TaskStatusFilter selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus} />
+        </View>
+
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateText}>{currentDate}</Text>
+        </View>
+
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TaskItem
+              key={item.id}
+              item={item}
+              selectedStatus={selectedStatus}
+              setItems={setItems}
             />
           )}
-        </View>
-      </Screen>
+          contentContainerStyle={styles.taskListContainer}
+        />
+
+        <TouchableOpacity style={styles.viewAllButton} onPress={() => navigation.navigate("AllTasks")}>
+          <Text style={styles.viewAllText}>Lihat Semua Kegiatan</Text>
+        </TouchableOpacity>
+
+        <TaskModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          setItems={setItems}
+          selectedDate={new Date().toISOString().split("T")[0]}
+        />
+      </View>
     </Drawer>
   );
-};
-
-const $container: ViewStyle = {
-  paddingTop: spacing.lg + spacing.xl,
-  paddingHorizontal: spacing.lg,
-};
+});
 
 const styles = StyleSheet.create({
-  button: {
-    backgroundColor: "darkorange",
-    borderRadius: 20,
-    minHeight: 40,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    elevation: 3,
-    marginVertical: 10,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  cardDescription: {
-    color: "gray",
-    fontSize: 14,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 5,
-  },
-  content: {
-    marginTop: 60, // Adjusted margin to position content below the header
-  },
   headerContainer: {
     alignItems: "center",
     backgroundColor: colors.primaryColor,
     flexDirection: "row",
-    justifyContent: "space-between", // Distribute space evenly
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     position: "absolute",
     top: 0,
-    left: 0, // Ensure the left position is set
-    right: 0, // Ensure the right position is set
+    width: "100%",
     zIndex: 10,
   },
   headerText: {
+    flex: 1,
     color: colors.primaryText,
     fontSize: 20,
     fontWeight: "bold",
-    flex: 1, // Allow text to take up available space
+    marginLeft: spacing.sm,
   },
-  listContainer: {
-    paddingBottom: spacing.lg,
+  addButton: {
+    padding: 10,
   },
-  noDataText: {
-    color: "gray",
+  addButtonText: {
+    color: colors.primaryText,
     fontSize: 16,
-    marginTop: 20,
-    textAlign: "center",
+    fontWeight: "bold",
+  },
+  filterContainer: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    top: 5,
+  },
+  dateContainer: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  viewAllButton: {
+    backgroundColor: colors.primaryColor,
+    padding: spacing.md,
+    borderRadius: 10,
+    alignItems: "center",
+    margin: spacing.md,
+  },
+  viewAllText: {
+    color: colors.primaryText,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  taskListContainer: {
+    paddingBottom: spacing.xl,
   },
 });
+
+const $screenContentContainer: ViewStyle = {
+  flex: 1,
+  backgroundColor: colors.background,
+  paddingTop: spacing.xl + spacing.md,
+};

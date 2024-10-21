@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native"
+import { View, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native"
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native"
 import { FontAwesome } from "@expo/vector-icons"
 import { Screen, Text } from "../../components"
 import { spacing } from "app/theme"
 import { RootStackParamList } from "app/screens/pages/navigationTypes"
+import { Api } from "app/services/api"
 
 // Define the props for this screen
 type WithdrawalSavingsRouteProp = RouteProp<RootStackParamList, "WithdrawalSavings">
@@ -14,11 +15,7 @@ export const WithdrawalSavings = () => {
   const route = useRoute<WithdrawalSavingsRouteProp>()
 
   // Menerima data dari route.params
-  const { name, accountNumber, cif, phone, email, address, initial_balance, final_balance } =
-    route.params || {}
-
-  // Menambahkan konsol log untuk memastikan data diambil dengan benar
-  console.log("Data yang diterima:", {
+  const {
     name,
     accountNumber,
     cif,
@@ -27,7 +24,12 @@ export const WithdrawalSavings = () => {
     address,
     initial_balance,
     final_balance,
-  })
+    userId,
+    transactionBatchData,
+  } = route.params || {}
+
+  // Ekstrak batchId dari transactionBatchData
+  const batchId = transactionBatchData?.id || ""
 
   // State untuk menyimpan nominal
   const [nominal, setNominal] = useState("")
@@ -40,6 +42,56 @@ export const WithdrawalSavings = () => {
 
   const handleNominalChange = (value: string) => {
     setNominal(formatNominal(value))
+  }
+
+  // Fungsi untuk membuat transaksi penarikan
+  const handleSave = async () => {
+    try {
+      // Data yang akan dipost
+      const postData = {
+        nominal: nominal.replace(/\./g, ""), // Menghapus titik dari nominal
+        accountNumber: accountNumber || "",
+        userId,
+        batchId,
+      }
+
+      console.log("Data yang dipost:", postData)
+
+      const api = new Api()
+      const result = await api.createTransaction(
+        "0",
+        postData.nominal,
+        2,
+        1,
+        "",
+        postData.accountNumber,
+        "",
+        "",
+        postData.userId,
+        "",
+        "",
+        "",
+        postData.batchId,
+      )
+
+      console.log("Transaction result:", result)
+
+      if (result) {
+        Alert.alert("Sukses", "Penarikan berhasil disimpan!")
+
+        // Kirim data ke halaman Print
+        navigation.navigate("Print", {
+          ...postData, // Kirim semua data yang dipost
+          transactionResult: result, // Kirim hasil transaksi
+          name: name,
+        })
+      } else {
+        Alert.alert("Error", "Terjadi kesalahan saat menyimpan penarikan.")
+      }
+    } catch (error) {
+      console.error("Error in creating withdrawal transaction:", error)
+      Alert.alert("Error", "Gagal melakukan penarikan.")
+    }
   }
 
   return (
@@ -102,7 +154,7 @@ export const WithdrawalSavings = () => {
         </View>
 
         {/* Tombol Simpan */}
-        <TouchableOpacity style={styles.saveButton}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Simpan</Text>
         </TouchableOpacity>
       </View>

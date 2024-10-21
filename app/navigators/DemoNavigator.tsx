@@ -4,33 +4,35 @@ import { CompositeScreenProps, useNavigation } from "@react-navigation/native"
 import React from "react"
 import { TextStyle, ViewStyle, TouchableOpacity } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { DemoCommunityScreen, DemoShowroomScreen, DemoDebugScreen, QRScannerScreen } from "../screens"
+import {
+  DemoShowroomScreen,
+  DemoDebugScreen,
+  QRScannerScreen,
+  DemoActivityScreen,
+} from "../screens"
 import { DemoPodcastListScreen } from "../screens/DemoNotification"
 import { colors, spacing, typography } from "../theme"
 import { AppStackParamList, AppStackScreenProps } from "./AppNavigator"
-import { createStackNavigator } from "@react-navigation/stack"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
-import SavingDepositPage from "app/screens/pages/SavingDepositPage"
-import SearchAccountPage from "app/screens/pages/SearchAccountPage"
-import { RootStackParamList } from 'app/screens/pages/navigationTypes'; // Import RootStackParamList
 
 export type DemoTabParamList = {
   DemoCommunity: undefined
   DemoShowroom: { queryIndex?: string; itemIndex?: string }
   DemoDebug: undefined
   DemoPodcastList: undefined
-  QRButton: undefined;
-  ActivityPage: undefined;
-  CustomerListPage: undefined;
-  SavingDepositPage: undefined;
-  SearchAccountPage: undefined;
-  AllBatchPage: undefined;
-  TransactionHistory: undefined;
-  DetailsPage: undefined;
-  AccountDetails: undefined;
-  SavingsDepositPage2: undefined;
-  WithdrawalSavings: undefined;
-  Scan: undefined;
+  QRButton: undefined
+  ActivityPage: undefined
+  CustomerListPage: undefined
+  SavingDepositPage: undefined
+  SearchAccountPage: undefined
+  AllBatchPage: undefined
+  TransactionHistory: undefined
+  DetailsPage: undefined
+  AccountDetails: undefined
+  SavingsDepositPage2: undefined
+  WithdrawalSavings: undefined
+  Scan: undefined
+  kalender: undefined
 }
 
 /**
@@ -60,8 +62,7 @@ export function DemoShowroomScreens() {
 
 export function DemoNavigator() {
   const { bottom } = useSafeAreaInsets()
-  const navigation = useNavigation();
-
+  const navigation = useNavigation()
 
   return (
     <Tab.Navigator
@@ -75,7 +76,6 @@ export function DemoNavigator() {
         tabBarItemStyle: $tabBarItem,
       }}
     >
-
       {/* ==================== Buttom Navigasi ==================== */}
       <Tab.Screen
         name="DemoShowroom"
@@ -89,12 +89,16 @@ export function DemoNavigator() {
       />
 
       <Tab.Screen
-        name="DemoCommunity"
-        component={DemoCommunityScreen}
+        name="DemoActivity"
+        component={DemoActivityScreen} // Corrected the component name
         options={{
           tabBarLabel: "Aktivitas",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="list-alt" color={focused ? colors.primaryColor : undefined} size={30} />
+            <FontAwesome
+              name="list-alt"
+              color={focused ? colors.primaryColor : undefined}
+              size={24}
+            />
           ),
         }}
       />
@@ -106,15 +110,15 @@ export function DemoNavigator() {
           tabBarIcon: () => (
             <TouchableOpacity
               style={$qrButtonContainer}
-              onPress={() => navigation.navigate('Scan')}
+              onPress={() => navigation.navigate("Scan")}
             >
-              <FontAwesome name="qrcode" size={40} color="white" />
+              <FontAwesome name="qrcode" size={24} color="white" />
             </TouchableOpacity>
           ),
         }}
         listeners={{
           tabPress: (e) => {
-            e.preventDefault();
+            e.preventDefault()
           },
         }}
       />
@@ -125,7 +129,7 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Notifikasi",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="bell" color={focused ? colors.primaryColor : undefined} size={30} />
+            <FontAwesome name="bell" color={focused ? colors.primaryColor : undefined} size={24} />
           ),
         }}
       />
@@ -136,11 +140,10 @@ export function DemoNavigator() {
         options={{
           tabBarLabel: "Pengaturan",
           tabBarIcon: ({ focused }) => (
-            <FontAwesome name="cog" color={focused ? colors.primaryColor : undefined} size={30} />
+            <FontAwesome name="cog" color={focused ? colors.primaryColor : undefined} size={24} />
           ),
         }}
       />
-
     </Tab.Navigator>
   )
 }
@@ -163,8 +166,8 @@ const $tabBarLabel: TextStyle = {
 const $qrButtonContainer: ViewStyle = {
   position: "absolute",
   bottom: spacing.sm,
-  height: 70,
-  width: 70,
+  height: 50,
+  width: 50,
   borderRadius: 35,
   backgroundColor: colors.primaryColor,
   alignItems: "center",

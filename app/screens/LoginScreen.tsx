@@ -1,221 +1,271 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { observer } from "mobx-react-lite";
-import React, { ComponentType, FC, useEffect, useMemo, useRef, useState } from "react";
-import { Image, TextInput, TextStyle, ViewStyle } from "react-native";
-import { Button, Icon, Screen, Text, TextField, TextFieldAccessoryProps } from "../components";
-import { useStores } from "../models";
-import { AppStackScreenProps } from "../navigators";
-import { colors, spacing } from "../theme";
-import { api } from "app/services/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/* eslint-disable react-native/no-color-literals */
+import React, { FC, useState, useEffect, useRef } from "react"
+import {
+  View,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  Keyboard,
+} from "react-native"
+import { observer } from "mobx-react-lite"
+import { AppStackScreenProps } from "../navigators"
+import { useStores } from "../models"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { api } from "app/services/api"
+import Icon from "react-native-vector-icons/MaterialCommunityIcons"
+import { colors } from "app/theme"
 
-interface LoginScreenProps extends AppStackScreenProps<"Login"> { }
+const { width, height } = Dimensions.get("window")
+
+interface LoginScreenProps extends AppStackScreenProps<"Login"> {}
 
 export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_props) {
+  const [authPassword, setAuthPassword] = useState("")
+  const [isAuthPasswordHidden, setIsAuthPasswordHidden] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
 
-  // State Declaration for Password
-  const authPasswordInput = useRef<TextInput>(null);
-  const [authPassword, setAuthPassword] = useState(""); // Local state for the password
-  const [isAuthPasswordHidden, setIsAuthPasswordHidden] = useState(true);
-  const [, setIsSubmitted] = useState(false);
-  const [attemptsCount, setAttemptsCount] = useState(0);
+  const { authenticationStore } = useStores()
+  const scrollViewRef = useRef<ScrollView>(null)
+  const usernameInputRef = useRef<TextInput>(null)
+  const passwordInputRef = useRef<TextInput>(null)
 
-  // Use the MobX store
-  const { authenticationStore } = useStores();
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height)
+    })
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0)
+    })
+
+    return () => {
+      keyboardDidShowListener.remove()
+      keyboardDidHideListener.remove()
+      authenticationStore.setAuthUsername("")
+      authenticationStore.setKodeKantor("")
+      setAuthPassword("")
+    }
+  }, [authenticationStore])
 
   const getTokenAwal = async () => {
     try {
-      const tokenAwal = await AsyncStorage.getItem("authToken");
-      return tokenAwal;
+      return await AsyncStorage.getItem("authToken")
     } catch (error) {
-      console.error("Error retrieving token:", error);
-      return null;
+      console.error("Error retrieving token:", error)
+      return null
     }
-  };
+  }
 
-  // Usage
-  getTokenAwal().then(tokenAwal => {
-    console.log("Token Awal:", tokenAwal);
-  });
-
-  // Reset fields after login or when unmounted
-  useEffect(() => {
-    return () => {
-      authenticationStore.setAuthUsername(""); // Clear username in the store
-      authenticationStore.setKodeKantor("");   // Clear Kode Kantor in the store
-      setAuthPassword("");                     // Clear local password state
-    };
-  }, [authenticationStore]);
-
-  // Login Button Function
   async function login() {
-    setIsSubmitted(true);
-    setAttemptsCount(attemptsCount + 1);
+    if (isSubmitting) return
 
-    console.log("Starting login...");
+    setIsSubmitting(true)
 
-    // Check validation error from store
-    if (authenticationStore.validationError) {
-      console.error("Validation Error:", authenticationStore.validationError);
-      return; // Prevent login if validation fails
-    }
-
-    // Validate password locally
-    if (!authPassword.trim()) {
-      console.error("Validation Error: Password can't be blank.");
-      return;
+    if (authenticationStore.validationError || !authPassword.trim()) {
+      setIsSubmitting(false)
+      return
     }
 
     try {
-      console.log("Sending login request...");
-
-      // Convert kodeKantor to an integer
-      const kodeKantorInt = parseInt(authenticationStore.kodeKantor, 10);
-      const token = await api.login(authenticationStore.authUsername, authPassword, kodeKantorInt); // Pass store values
+      const kodeKantorInt = parseInt(authenticationStore.kodeKantor, 10)
+      const token = await api.login(authenticationStore.authUsername, authPassword, kodeKantorInt)
 
       if (token) {
-        await AsyncStorage.setItem('authToken', token.access_token);
-        await AsyncStorage.setItem('kodeKantor', authenticationStore.kodeKantor); // Store kodeKantor
-        authenticationStore.setAuthToken(token.access_token);
+        await AsyncStorage.setItem("authToken", token.access_token)
+        await AsyncStorage.setItem("kodeKantor", authenticationStore.kodeKantor)
+        authenticationStore.setAuthToken(token.access_token)
 
-        console.log("Login successful, token:", token.access_token);
-        setAuthPassword(""); // Clear password after successful login
-        authenticationStore.setAuthUsername(""); // Clear username
-        authenticationStore.setKodeKantor(""); // Clear Kode Kantor
-      } else {
-        console.error("Login failed: No token returned");
+        setAuthPassword("")
+        authenticationStore.setAuthUsername("")
+        authenticationStore.setKodeKantor("")
       }
     } catch (error) {
-      console.error("Error during login:", error);
+      console.error("Error during login:", error)
     }
 
-    setIsSubmitted(false);
+    setIsSubmitting(false)
   }
 
+  const handleFocus = (inputIndex: number) => {
+    const scrollToPosition = height * 0.2 + inputIndex * 60 // Adjust this value as needed
+    scrollViewRef.current?.scrollTo({ y: scrollToPosition, animated: true })
+  }
 
-  // Password field accessory for toggling visibility
-  const PasswordRightAccessory: ComponentType<TextFieldAccessoryProps> = useMemo(
-    () =>
-      function PasswordRightAccessory(props: TextFieldAccessoryProps) {
-        return (
-          <Icon
-            icon={isAuthPasswordHidden ? "view" : "hidden"}
-            color={colors.palette.neutral800}
-            containerStyle={props.style}
-            size={20}
-            onPress={() => setIsAuthPasswordHidden(!isAuthPasswordHidden)}
-          />
-        );
-      },
-    [isAuthPasswordHidden],
-  );
+  const handlePasswordChange = (text: string) => {
+    setAuthPassword(text.toLowerCase())
+  }
 
   return (
-    <Screen
-      preset="auto"
-      contentContainerStyle={$screenContentContainer}
-      safeAreaEdges={["top", "bottom"]}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -100} // Adjust this value
     >
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={[styles.scrollView, { paddingBottom: keyboardHeight / 2 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.logoContainer}>
+          <Image source={require("../assets/img/dots_logo.png")} style={styles.logo} />
+        </View>
 
-      {/* Logo */}
-      <Image source={require("../assets/img/dots_logo.png")} style={$logoStyle as any} />
+        <View style={styles.formContainer}>
+          <Text style={styles.welcomeText}>Welcome Back</Text>
+          <Text style={styles.subText}>Sign in to continue</Text>
 
-      <Text style={$welcomeText}>Selamat Datang</Text>
+          <View style={styles.inputContainer}>
+            <Icon
+              name="office-building"
+              size={24}
+              color={colors.primaryColor}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              value={authenticationStore.kodeKantor}
+              onChangeText={authenticationStore.setKodeKantor}
+              placeholder="Office Code"
+              placeholderTextColor="#a0a0a0"
+              keyboardType="numeric"
+              onFocus={() => handleFocus(0)}
+              onSubmitEditing={() => usernameInputRef.current?.focus()}
+              returnKeyType="next"
+            />
+          </View>
 
-      {/* Kode Kantor */}
-      <TextField
-        value={authenticationStore.kodeKantor} // Bind the Kode Kantor input to the store
-        onChangeText={authenticationStore.setKodeKantor} // Update store on change
-        containerStyle={$textField}
-        autoCapitalize="none"
-        autoCorrect={false}
-        label="Kode Kantor"
-        placeholder="Masukkan Kode Kantor"
-        keyboardType="numeric" // Set keyboard type to numeric
-      />
+          <View style={styles.inputContainer}>
+            <Icon name="account" size={24} color={colors.primaryColor} style={styles.inputIcon} />
+            <TextInput
+              ref={usernameInputRef}
+              style={styles.input}
+              value={authenticationStore.authUsername}
+              onChangeText={authenticationStore.setAuthUsername}
+              placeholder="Username"
+              placeholderTextColor="#a0a0a0"
+              autoCapitalize="none"
+              onFocus={() => handleFocus(1)}
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
+              returnKeyType="next"
+            />
+          </View>
 
-      {/* Username */}
-      <TextField
-        value={authenticationStore.authUsername} // Bind the Username input to the store
-        onChangeText={authenticationStore.setAuthUsername} // Update store on change
-        containerStyle={$textField}
-        autoCapitalize="none"
-        autoComplete="username"
-        autoCorrect={false}
-        label="Username"
-        placeholder="Masukkan Username"
-      />
+          <View style={styles.inputContainer}>
+            <Icon name="lock" size={24} color={colors.primaryColor} style={styles.inputIcon} />
+            <TextInput
+              ref={passwordInputRef}
+              style={styles.input}
+              value={authPassword}
+              onChangeText={setAuthPassword}
+              placeholder="Password"
+              placeholderTextColor="#a0a0a0"
+              secureTextEntry={isAuthPasswordHidden}
+              autoCapitalize="none"
+              onFocus={() => handleFocus(2)}
+              onSubmitEditing={login}
+              returnKeyType="go"
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setIsAuthPasswordHidden(!isAuthPasswordHidden)}
+            >
+              <Icon
+                name={isAuthPasswordHidden ? "eye-off" : "eye"}
+                size={24}
+                color={colors.primaryColor}
+              />
+            </TouchableOpacity>
+          </View>
 
-      {/* Password */}
-      <TextField
-        ref={authPasswordInput}
-        value={authPassword}
-        onChangeText={setAuthPassword}
-        containerStyle={$textField}
-        autoCapitalize="none"
-        autoComplete="password"
-        autoCorrect={false}
-        secureTextEntry={isAuthPasswordHidden}
-        label="Password"
-        placeholder="Masukkan Password"
-        RightAccessory={PasswordRightAccessory}
-      />
+          <TouchableOpacity style={styles.loginButton} onPress={login} disabled={isSubmitting}>
+            <Text style={styles.loginButtonText}>{isSubmitting ? "Signing In..." : "Sign In"}</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Login Button */}
-      <Button
-        testID="login-button"
-        text="LOGIN"
-        style={$loginButton}
-        textStyle={$loginButtonText}
-        onPress={login}
-      />
+        <Text style={styles.versionText}>Version 2.0.0</Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  )
+})
 
-      {/* Version Text */}
-      <Text style={$versionText}>Version 2.0.0</Text>
-    </Screen>
-  );
-});
-
-/**
- * CSS Style
- */
-const $screenContentContainer: ViewStyle = {
-  paddingVertical: 80,
-  paddingHorizontal: spacing.lg,
-  justifyContent: "flex-start",
-  flex: 1,
-};
-
-const $welcomeText: TextStyle = {
-  fontSize: 24,
-  fontWeight: "bold",
-  textAlign: "center",
-  marginBottom: spacing.md,
-  marginTop: spacing.lg,
-};
-
-const $logoStyle: ViewStyle = {
-  alignSelf: "center",
-  marginBottom: spacing.lg,
-};
-
-const $textField: ViewStyle = {
-  marginBottom: spacing.md,
-};
-
-const $loginButton: ViewStyle = {
-  marginTop: spacing.lg,
-  backgroundColor: 'navy',
-};
-
-const $versionText: TextStyle = {
-  marginTop: spacing.xl,
-  textAlign: "center",
-  color: colors.palette.neutral600,
-};
-
-const $loginButtonText: TextStyle = {
-  color: 'white',
-  fontWeight: 'bold',
-  textAlign: 'center',
-};
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#ffffff",
+    flex: 1,
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  formContainer: {
+    marginTop: height * 0.05,
+    width: "100%",
+  },
+  input: {
+    color: "#333333",
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 15,
+  },
+  inputContainer: {
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    flexDirection: "row",
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  loginButton: {
+    backgroundColor: colors.primaryColor,
+    borderRadius: 25,
+    marginTop: 20,
+    paddingVertical: 15,
+  },
+  loginButtonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  logo: {
+    height: width * 0.4,
+    resizeMode: "contain",
+    width: width * 0.6,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginTop: height * 0.1,
+  },
+  scrollView: {
+    flexGrow: 1,
+    justifyContent: "space-between",
+    padding: 20,
+  },
+  subText: {
+    color: "#666666",
+    fontSize: 16,
+    marginBottom: 30,
+    textAlign: "center",
+  },
+  versionText: {
+    color: "#666666",
+    marginTop: 20,
+    textAlign: "center",
+  },
+  welcomeText: {
+    color: colors.primaryColor,
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+})

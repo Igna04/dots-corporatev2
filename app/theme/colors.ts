@@ -38,7 +38,7 @@ const palette = {
 
   
   // Background
-  primaryColor: "#0074D9",
+  primaryColor: "#1F5AA6",
   secondryColor: "#2f86ff",
   
   

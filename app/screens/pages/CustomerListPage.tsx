@@ -1,8 +1,6 @@
-/* eslint-disable react-native/no-color-literals */
-/* eslint-disable react-native/sort-styles */
 import React, { useEffect, useState } from "react"
 import { View, TextInput, StyleSheet, TouchableOpacity, FlatList, Keyboard } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import { FontAwesome } from "@expo/vector-icons"
 import { Text } from "../../components"
 import { colors, spacing } from "app/theme"
@@ -12,13 +10,18 @@ import { StackNavigationProp } from "@react-navigation/stack"
 // Definisikan tipe untuk parameter yang diterima oleh 'DetailsPage'
 type RootStackParamList = {
   ActivityPage: undefined
-  DetailsPage: { item: any; accountNumber?: string } // Gunakan any untuk item, tambahkan accountNumber opsional
+  DetailsPage: {
+    item: any
+    accountNumber?: string
+    initial_balance?: number
+    final_balance?: number
+    userId?: string // Tambahkan userId di sini
+  }
 }
 
 // Definisikan tipe untuk navigasi
 type ActivityPageNavigationProp = StackNavigationProp<RootStackParamList, "ActivityPage">
 
-// Buat konstanta COLORS untuk mengikuti linting dan meningkatkan keterbacaan kode
 const COLORS = {
   white: "#FFFFFF",
   gray: "#808080",
@@ -29,10 +32,16 @@ const COLORS = {
 
 export const CustomerListPage = () => {
   const navigation = useNavigation<ActivityPageNavigationProp>()
+  const route = useRoute() // Mengambil parameter navigasi
+  const { userId, transactionBatchData } = route.params || {}
   const [searchQuery, setSearchQuery] = useState("")
   const [isFocused, setIsFocused] = useState(false)
   const [customerData, setCustomerData] = useState<any[]>([]) // Gunakan any untuk customerData
   const [loading, setLoading] = useState(true)
+
+  // Log userId untuk memastikan apakah data telah dikirim
+  console.log("User ID yang diterima di CustomerListPage:", userId)
+  console.log("Transaction batch data yang diterima di CustomerListPage:", transactionBatchData)
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -61,7 +70,6 @@ export const CustomerListPage = () => {
     Keyboard.dismiss()
   }
 
-  // Update this function
   const handleCardPress = async (item: any) => {
     const savingsResponse = await api.getCustomerSavingsByCif(item.cif)
 
@@ -80,24 +88,25 @@ export const CustomerListPage = () => {
         console.log("Final Balance:", finalBalance)
 
         if (accountNumber) {
-          // Kirim initial_balance dan final_balance
           navigation.navigate("Details", {
             item,
             accountNumber,
             initial_balance: initialBalance,
-            final_balance: finalBalance, // Kirim final_balance
+            final_balance: finalBalance,
+            userId, // Menambahkan userId ke parameter navigasi
+            transactionBatchData,
           })
         } else {
           console.log("Account number not found")
-          navigation.navigate("Details", { item }) // Tanpa accountNumber
+          navigation.navigate("Details", { item, transactionBatchData }) // Tanpa accountNumber
         }
       } else {
         console.log("No savings data found")
-        navigation.navigate("Details", { item }) // Tanpa accountNumber
+        navigation.navigate("Details", { item, transactionBatchData }) // Tanpa accountNumber
       }
     } else {
       console.log("Savings data not available: ", savingsResponse?.savings)
-      navigation.navigate("Details", { item }) // Tanpa accountNumber
+      navigation.navigate("Details", { item, transactionBatchData }) // Tanpa accountNumber
     }
   }
 

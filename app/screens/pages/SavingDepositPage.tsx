@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native"
+import { View, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native"
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native"
 import { FontAwesome } from "@expo/vector-icons"
 import { Screen, Text } from "../../components"
 import { spacing } from "app/theme"
 import { RootStackParamList } from "app/screens/pages/navigationTypes"
+import { Api } from "app/services/api" // Tambahkan ini
 
 // Define the props for this screen
 type SavingDepositRouteProp = RouteProp<RootStackParamList, "SavingDepositPage">
@@ -14,9 +15,9 @@ export const SavingDepositPage: React.FC = () => {
   const route = useRoute<SavingDepositRouteProp>()
 
   // Menerima data dari route.params
-  const { name, accountNumber, cif, phone, email, address } = route.params || {}
-
-  // State untuk menyimpan nominal
+  const { name, accountNumber, cif, phone, email, address, userId, transactionBatchData } =
+    route.params || {}
+  const batchId = transactionBatchData?.id || ""
   const [nominal, setNominal] = useState("")
 
   // Fungsi untuk memformat angka menjadi format ribuan
@@ -29,9 +30,54 @@ export const SavingDepositPage: React.FC = () => {
     setNominal(formatNominal(value))
   }
 
-  // Fungsi untuk menangani navigasi ke PrintPage
-  const handleSave = () => {
-    navigation.navigate("Print")
+  // Fungsi untuk membuat transaksi
+  const handleSave = async () => {
+    try {
+      // Data yang akan dipost
+      const postData = {
+        nominal: nominal.replace(/\./g, ""),
+        accountNumber: accountNumber || "",
+        userId,
+        batchId,
+      }
+
+      console.log("Data yang dipost:", postData)
+
+      const api = new Api()
+      const result = await api.createTransaction(
+        "0",
+        postData.nominal, // Nominal tanpa titik
+        1,
+        1,
+        "",
+        postData.accountNumber,
+        "",
+        "",
+        postData.userId,
+        "",
+        "",
+        "",
+        postData.batchId,
+      )
+
+      console.log("Transaction result:", result)
+
+      if (result) {
+        Alert.alert("Sukses", "Transaksi berhasil disimpan!")
+
+        // Kirim data ke halaman Print
+        navigation.navigate("Print", {
+          ...postData, // Kirim semua data yang dipost
+          transactionResult: result, // Kirim hasil transaksi
+          name: name,
+        })
+      } else {
+        Alert.alert("Error", "Terjadi kesalahan saat menyimpan transaksi.")
+      }
+    } catch (error) {
+      console.error("Error in creating transaction:", error)
+      Alert.alert("Error", "Gagal melakukan transaksi.")
+    }
   }
 
   return (

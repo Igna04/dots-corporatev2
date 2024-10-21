@@ -22,12 +22,14 @@ export const AccountDetails: React.FC = () => {
     phone,
     email,
     address,
-    initial_balance, // Terima initial_balance
-    final_balance, // Terima final_balance
+    initial_balance,
+    final_balance,
+    userId, // Tambahkan ini
+    transactionBatchData,
   } = route.params || {}
 
   // Console log semua data yang diterima
-  console.log("Received data:", {
+  console.log("Received data in AccountDetails:", {
     name,
     accountNumber,
     cif,
@@ -36,6 +38,8 @@ export const AccountDetails: React.FC = () => {
     address,
     initial_balance,
     final_balance,
+    userId, // Tambahkan ini
+    transactionBatchData,
   })
 
   // Prepare the QR Code value in base64 format
@@ -48,7 +52,7 @@ export const AccountDetails: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <FontAwesome name="arrow-left" size={18} color="white" />
         </TouchableOpacity>
-        <Text style={styles.title}>Account Details</Text>
+        <Text style={styles.title}>Tabungan</Text>
       </View>
 
       <View style={styles.container}>
@@ -59,7 +63,7 @@ export const AccountDetails: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.accountTitle}>Account Information</Text>
+        <Text style={styles.accountTitle}>Tab Umum</Text>
         <View style={styles.infoCard}>
           <Text style={styles.label}>Name</Text>
           <Text style={styles.info}>{name}</Text>
@@ -75,7 +79,7 @@ export const AccountDetails: React.FC = () => {
           {/* Setoran Tabungan */}
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() =>
+            onPress={() => {
               navigation.navigate("SavingDeposit", {
                 name,
                 accountNumber,
@@ -83,8 +87,20 @@ export const AccountDetails: React.FC = () => {
                 phone,
                 email,
                 address,
+                userId, // Tambahkan userId ke parameter navigasi
+                transactionBatchData,
               })
-            }
+              console.log("Navigating to SavingDeposit with data:", {
+                name,
+                accountNumber,
+                cif,
+                phone,
+                email,
+                address,
+                userId, // Tambahkan userId ke log
+                transactionBatchData,
+              })
+            }}
           >
             <FontAwesome name="credit-card" size={40} color="orange" />
             <Text style={styles.actionText}>Setoran Tabungan</Text>
@@ -103,6 +119,8 @@ export const AccountDetails: React.FC = () => {
                 address,
                 initial_balance, // Kirim initial_balance
                 final_balance, // Kirim final_balance
+                userId, // Tambahkan userId ke log
+                transactionBatchData,
               })
               console.log("Navigating to WithdrawalSavings with data:", {
                 initial_balance,

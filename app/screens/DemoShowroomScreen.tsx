@@ -1,346 +1,468 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-useless-catch */
 /* eslint-disable react-native/no-color-literals */
 import React, { FC, useState, useEffect } from "react"
-import { View, ViewStyle, StyleSheet, Text, TouchableOpacity } from "react-native"
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  StatusBar,
+  Platform,
+  ActivityIndicator,
+} from "react-native"
 import { Drawer } from "react-native-drawer-layout"
 import { Screen } from "../components"
 import { isRTL } from "../i18n"
-import { DemoTabScreenProps } from "../navigators/DemoNavigator"
-import { colors, spacing } from "../theme"
+import { DemoTabScreenProps, DemoNavigator } from "../navigators/DemoNavigator"
 import { DrawerIconButton } from "./DemoShowroomScreen/DrawerIconButton"
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { jwtDecode } from 'jwt-decode'
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { jwtDecode } from "jwt-decode"
 import { CustomDrawer } from "./CustomDrawer"
 import { api } from "app/services/api"
-import moment from 'moment-timezone'
+import moment from "moment-timezone"
+import { colors, spacing } from "app/theme"
+import { useNavigation } from "@react-navigation/native"
 
-export const DemoShowroomScreen: FC<DemoTabScreenProps<"DemoShowroom">> = function DemoShowroomScreen(_props) {
-  const [open, setOpen] = useState(false)
-  const [username, setUsername] = useState<string | null>(null)
-  const [showAttendance, setShowAttendance] = useState(false)
-  const [idBatch, setIdBatch] = useState("")
-  const [userId, setUserId] = useState<number | null>(null)
-  const [transactionBatch, setTransactionBatch] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [currentTime, setCurrentTime] = useState(moment().tz('Asia/Jakarta'))
+export const DemoShowroomScreen: FC<DemoTabScreenProps<"DemoShowroom">> =
+  function DemoShowroomScreen(_props) {
+    const [open, setOpen] = useState(false)
+    const [username, setUsername] = useState<string | null>(null)
+    const [showAttendance, setShowAttendance] = useState(false)
+    const [idBatch, setIdBatch] = useState("")
+    const [userId, setUserId] = useState<number | null>(null)
+    const [transactionBatch, setTransactionBatch] = useState(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [isEndingBatch, setIsEndingBatch] = useState(false)
+    const [error, setError] = useState(null)
+    const [currentTime, setCurrentTime] = useState(moment().tz("Asia/Jakarta"))
+    const [startTime, setStartTime] = useState<moment.Moment | null>(null)
+    const [elapsedTime, setElapsedTime] = useState<string>("00:00:00")
+    const navigation = useNavigation()
+    const [trxId, setTrxId] = useState("")
+    const [active, setActive] = useState(0)
 
-  const toggleDrawer = () => {
-    setOpen(!open)
-  }
+    useEffect(() => {
+      fetchToken()
+      const timer = setInterval(() => {
+        setCurrentTime(moment().tz("Asia/Jakarta"))
+      }, 1000)
+      return () => clearInterval(timer)
+    }, [])
 
-  const fetchToken = async () => {
-    const token = await AsyncStorage.getItem('authToken')
-    if (token) {
+    useEffect(() => {
+      if (startTime) {
+        const timer = setInterval(() => {
+          const duration = moment.duration(moment().diff(startTime))
+          setElapsedTime(
+            `${String(duration.hours()).padStart(2, "0")}:${String(duration.minutes()).padStart(
+              2,
+              "0",
+            )}:${String(duration.seconds()).padStart(2, "0")}`,
+          )
+        }, 1000)
+        return () => clearInterval(timer)
+      }
+    }, [startTime])
+
+    useEffect(() => {
+      if (isEndingBatch) {
+        const timer = setTimeout(() => {
+          setShowAttendance(false)
+          setTransactionBatch(null)
+          setIdBatch("")
+          setError(null)
+          setIsEndingBatch(false)
+          setStartTime(null)
+          setElapsedTime("00:00:00")
+        }, 2000)
+
+        return () => clearTimeout(timer)
+      }
+    }, [isEndingBatch])
+
+    const toggleDrawer = () => setOpen(!open)
+
+    const fetchToken = async () => {
+      const token = await AsyncStorage.getItem("authToken")
+      console.log(token)
+      if (token) {
+        try {
+          const decodedToken = jwtDecode(token)
+          const username = decodedToken.user?.username
+          const userId = decodedToken.user?.id
+          if (username) setUsername(username)
+          if (userId) {
+            setUserId(userId)
+            console.log("User ID retrieved:", userId) // Tambahkan baris ini
+          }
+        } catch (error) {
+          console.error("Failed to decode token:", error)
+        }
+      }
+    }
+
+    const handleBatchPress = async () => {
+      setIsLoading(true)
       try {
-        const decodedToken = jwtDecode(token)
-        const username = decodedToken.user?.username
-        const userId = decodedToken.user?.id
-        if (username) setUsername(username)
-        if (userId) setUserId(userId)
+        const token = await AsyncStorage.getItem("authToken")
+        const branchId = ""
+        if (!token || !userId) {
+          console.error("No auth token or user ID found.")
+          return
+        }
+
+        const result = await api.createTransactionBatch(
+          String(userId),
+          userId,
+          1, // status
+          branchId, // branchId
+          "", // coreTrxGroupId
+          true, // isActive
+        )
+
+        console.log("API Response:", result)
+        setIdBatch(result.id)
+        setActive(result.is_active)
+        console.log(result)
+        console.log("result id" + result.id)
+        setTrxId(result.id)
+        await fetchTransactionBatch(result.id)
+        setStartTime(moment().tz("Asia/Jakarta"))
+        setShowAttendance(true)
       } catch (error) {
-        console.error("Failed to decode token:", error)
+        console.error("Error in handleBatchPress:", error)
+        setError("Failed to start batch. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     }
-  }
 
-  const handleBatchPress = async () => {
-    try {
-      const token = await AsyncStorage.getItem('authToken')
-      const isActive = true
-      const status = 1
-      const coreTrxGroupId = ""
-      const branchId = ""
+    const handleEndBatch = async () => {
+      setIsEndingBatch(true)
+      try {
+        if (!idBatch) {
+          console.error("No batch ID available")
+          return
+        }
 
-      if (!token) {
-        console.error("No auth token found. User might not be logged in.")
-        return
+        setError(null)
+
+        const result = await api.updateTransactionBatch(
+          idBatch,
+          0,
+          moment().tz("Asia/Jakarta").format(),
+          userId,
+          false,
+        )
+
+        if (result && !result.error) {
+          console.log("Batch ended successfully:", result)
+        } else {
+          console.error("Failed to end batch:", result.error || "Unknown error")
+          setError("Failed to end the batch. Please try again.")
+          setIsEndingBatch(false)
+        }
+      } catch (err) {
+        console.error("Error ending batch:", err)
+        setError("An unexpected error occurred while ending the batch")
+        setIsEndingBatch(false)
       }
-
-      if (!userId) {
-        console.error("User ID not found.")
-        return
-      }
-
-      const result = await api.createTransactionBatch(
-        String(userId),
-        userId,
-        status,
-        branchId,
-        coreTrxGroupId,
-        isActive
-      )
-
-      console.log("API Response:", result)
-      setIdBatch(result.id)
-      setShowAttendance(true)
-    } catch (error) {
-      console.error("Error in handleBatchPress:", error)
     }
-  }
 
-  const handleEndBatch = async () => {
-    try {
-      if (!idBatch) {
-        console.error("No batch ID available");
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      const result = await api.updateTransactionBatch(
-        idBatch,
-        0,
-        moment().tz('Asia/Jakarta').format(),
-        userId,
-        false
-      );
-
-      if (result && !result.error) {
-        console.log("Batch ended successfully:", result);
-        setTransactionBatch(result);  // Update the state with the new batch data
-        setTimeout(() => {
-          setShowAttendance(false);
-          setTransactionBatch(null);
-          setIdBatch("");
-          setError(null);
-        }, 1000);
-      } else {
-        console.error("Failed to end batch:", result.error || "Unknown error");
-        setError("Failed to end the batch. Please try again.");
-      }
-    } catch (err) {
-      console.error("Error ending batch:", err);
-      setError("An unexpected error occurred while ending the batch");
-    } finally {
-      setIsLoading(false);
+    const handleSejarahBatch = () => {
+      navigation.navigate("TransactionHistory", {
+        trxId,
+        active,
+      })
     }
-  };
 
-  const fetchTransactionBatch = async (id) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const result = await api.getTransactionBatchById(id)
-      if (result?.kind === "ok") {
-        setTransactionBatch({
-          id: result.transactionBatch.id || 'N/A',
-          status: result.transactionBatch.status || 0,
-          created_by: {
-            username: result.transactionBatch.created_by?.username || 'Unknown'
-          },
-          // Add other properties as needed, with fallback values
-        })
-      } else if (result?.kind === "bad-data") {
-        setError("Failed to retrieve transaction batch data")
-      } else {
-        setError("An error occurred")
+    const fetchTransactionBatch = async (id) => {
+      setError(null)
+      try {
+        const result = await api.getTransactionBatchById(id)
+        if (result?.kind === "ok") {
+          setTransactionBatch({
+            id: result.transactionBatch.id || "N/A",
+            status: result.transactionBatch.status || 0,
+            created_by: {
+              username: result.transactionBatch.created_by?.username || "Unknown",
+            },
+          })
+        } else {
+          throw new Error(
+            result?.kind === "bad-data"
+              ? "Failed to retrieve transaction batch data"
+              : "An error occurred",
+          )
+        }
+      } catch (err) {
+        throw err
       }
-    } catch (err) {
-      setError("An unexpected error occurred")
-    } finally {
-      setIsLoading(false)
     }
-  }
 
-  useEffect(() => {
-    fetchToken()
-  }, [])
-
-  useEffect(() => {
-    if (idBatch) {
-      fetchTransactionBatch(idBatch)
-    }
-  }, [idBatch])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(moment().tz('Asia/Jakarta'))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(moment().tz('Asia/Jakarta'))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  return (
-    <Drawer
-      open={open}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
-      drawerType="back"
-      drawerPosition={isRTL ? "right" : "left"}
-      renderDrawerContent={() => <CustomDrawer />}
-    >
-      <Screen preset="fixed" safeAreaEdges={["top"]} contentContainerStyle={$screenContainer}>
-        <View style={styles.headerContainer}>
-          <DrawerIconButton onPress={toggleDrawer} />
-          <Text style={styles.headerText}>Ini Header</Text>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <Text style={styles.welcomeText}>
-            Selamat Datang, <Text style={styles.userName}>{username || "User"}</Text>
-          </Text>
-          {!showAttendance && (
-            <View style={styles.buttonWrapper}>
-              <TouchableOpacity style={styles.beginEndBatch} onPress={handleBatchPress}>
-                <Text style={styles.buttonText}>Mulai Batch</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {showAttendance && transactionBatch && (
-          <View style={styles.attendanceContainer}>
-            <Text style={styles.timeText}>{currentTime.format('HH:mm:ss')}</Text>
-            <Text style={styles.dateText}>{currentTime.format('DD MMMM YYYY')} WIB</Text>
-            <View style={styles.scheduleCard}>
-              <Text style={styles.scheduleText}>Batch ID: {transactionBatch.id || 'N/A'}</Text>
-              <Text style={styles.timeRangeText}>
-                Status: {transactionBatch.status === 1 ? 'Active' : 'Inactive'}
-              </Text>
-              <Text style={styles.createdByText}>
-                Created by: {transactionBatch.created_by?.username || 'Unknown'}
-              </Text>
-              <View style={styles.buttonGroup}>
-                <TouchableOpacity style={styles.historyButton}>
-                  <Text style={styles.buttonText}>History Batch</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.endBatch} onPress={handleEndBatch}>
-                  <Text style={styles.buttonText}>Hentikan Batch</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+    return (
+      <Drawer
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
+        drawerType="back"
+        drawerPosition={isRTL ? "right" : "left"}
+        renderDrawerContent={() => (
+          <CustomDrawer userId={userId} transactionBatchData={transactionBatch} />
         )}
+      >
+        <Screen
+          preset="fixed"
+          safeAreaEdges={["top"]}
+          contentContainerStyle={styles.screenContainer}
+        >
+          <StatusBar barStyle="light-content" />
+          <View style={styles.headerContainer}>
+            <DrawerIconButton onPress={toggleDrawer} />
+            <Text style={styles.headerText}>Attendance Dashboard</Text>
+          </View>
 
-        {isLoading && <Text>Loading...</Text>}
-        {error && <Text style={styles.errorText}>{error}</Text>}
-      </Screen>
-    </Drawer>
-  )
-}
+          <View style={styles.contentContainer}>
+            <Text style={styles.welcomeText}>
+              Welcome, <Text style={styles.userName}>{username || "User"}</Text>
+            </Text>
 
-const $screenContainer: ViewStyle = {
-  flex: 1,
-  padding: spacing.md,
-  backgroundColor: "#e0e0e0",
-}
+            {!showAttendance && !isEndingBatch && (
+              <TouchableOpacity
+                style={styles.beginBatchButton}
+                onPress={handleBatchPress}
+                disabled={isLoading}
+              >
+                <Text style={styles.buttonText}>Start Batch</Text>
+              </TouchableOpacity>
+            )}
+
+            {isLoading && !showAttendance && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3498db" />
+                <Text style={styles.loadingText}>Starting batch...</Text>
+              </View>
+            )}
+
+            {showAttendance && transactionBatch && !isEndingBatch && (
+              <View style={styles.attendanceContainer}>
+                <View style={styles.timeContainer}>
+                  <View style={styles.timeColumn}>
+                    <Text style={styles.timeLabel}>Waktu Mulai</Text>
+                    <Text style={styles.timeText}>
+                      {startTime ? startTime.format("HH:mm:ss") : "N/A"}
+                    </Text>
+                  </View>
+                  <View style={styles.timeColumn}>
+                    <Text style={styles.timeLabel}>Waktu Saat Ini</Text>
+                    <Text style={styles.timeText}>{currentTime.format("HH:mm:ss")}</Text>
+                  </View>
+                </View>
+                <Text style={styles.elapsedTimeText}>Lama Batch Aktif: {elapsedTime}</Text>
+                <View style={styles.scheduleCard}>
+                  <Text style={styles.scheduleText}>Batch ID: {transactionBatch.id || "N/A"}</Text>
+                  <Text style={styles.statusText}>
+                    Status: {transactionBatch.status === 1 ? "Active" : "Inactive"}
+                  </Text>
+                  <Text style={styles.createdByText}>
+                    Dibuat Oleh: {transactionBatch.created_by?.username || "Unknown"}
+                  </Text>
+                  <View style={styles.buttonGroup}>
+                    <TouchableOpacity style={styles.historyButton} onPress={handleSejarahBatch}>
+                      <Text style={styles.buttonText}>Sejarah Batch</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.endBatchButton}
+                      onPress={handleEndBatch}
+                      disabled={isEndingBatch}
+                    >
+                      <Text style={styles.buttonTextEnd}>Akhiri Batch</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {isEndingBatch && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3498db" />
+                <Text style={styles.loadingText}>Ending batch...</Text>
+              </View>
+            )}
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
+          </View>
+        </Screen>
+      </Drawer>
+    )
+  }
 
 const styles = StyleSheet.create({
   attendanceContainer: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    elevation: 2,
-    padding: spacing.md,
-    shadowColor: '#000',
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    elevation: 5,
+    marginTop: 20,
+    padding: 20,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    width: "90%",
   },
-  beginEndBatch: {
-    alignItems: "center",
-    backgroundColor: "green",
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  buttonContainer: {
-    alignItems: "center",
-    marginVertical: spacing.lg,
+  beginBatchButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 15,
+    marginTop: 20,
+    overflow: "hidden",
+    paddingVertical: 12,
+    width: "80%",
   },
   buttonGroup: {
-    flexDirection: 'row',
-    marginTop: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    width: "100%",
   },
   buttonText: {
+    alignItems: "center",
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
-  buttonWrapper: {
-    marginBottom: spacing.md,
-    width: "100%",
+  buttonTextEnd: {
+    alignItems: "center",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  contentContainer: {
+    alignItems: "center",
+    flex: 1,
+    paddingHorizontal: 20,
   },
   createdByText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
     marginTop: 5,
   },
-  dateText: {
-    color: '#999',
-    fontSize: 18,
+  elapsedTimeText: {
+    color: "#666",
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: "center",
   },
-  endBatch: {
-    backgroundColor: '#d10404',
-    borderRadius: 5,
-    marginHorizontal: 10,
-    padding: 10,
+  endBatchButton: {
+    alignItems: "center",
+    backgroundColor: "#e74c3c",
+    borderRadius: 10,
+    flex: 1,
+    marginLeft: 10,
+    overflow: "hidden",
+    paddingVertical: 12,
   },
   errorText: {
-    color: 'red',
+    color: "#e74c3c",
+    fontSize: 16,
     marginTop: 10,
+    textAlign: "center",
   },
   headerContainer: {
     alignItems: "center",
     backgroundColor: colors.primaryColor,
     flexDirection: "row",
-    paddingVertical: spacing.sm,
-    position: "absolute",
-    top: 0,
-    width: "110%",
-    zIndex: 10,
+    justifyContent: "flex-start",
+    paddingVertical: 10,
+    width: "100%",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   headerText: {
-    color: colors.primaryText,
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
   },
   historyButton: {
-    backgroundColor: colors.primaryColor,
-    borderRadius: 5,
-    marginHorizontal: 10,
-    padding: 10,
+    backgroundColor: "#3498db",
+    borderRadius: 10,
+    flex: 1,
+    marginRight: 10,
+    overflow: "hidden",
+    paddingVertical: 12,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#3498db",
+    fontSize: 16,
+    marginTop: 10,
   },
   scheduleCard: {
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: "#f8f8f8",
+    borderRadius: 15,
     marginTop: 20,
-    padding: 15,
+    padding: 20,
+    width: "100%",
   },
   scheduleText: {
-    color: '#333',
+    color: "#333",
     fontSize: 16,
+    fontWeight: "bold",
   },
-  timeRangeText: {
+  screenContainer: {
+    backgroundColor: "#f0f0f0",
+    flex: 1,
+  },
+  statusText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 5,
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+  timeColumn: {
+    alignItems: "center",
+    flex: 1,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  timeLabel: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
   },
   timeText: {
-    color: '#2f86ff',
-    fontSize: 38,
-    fontWeight: 'bold',
+    color: "#3498db",
+    fontSize: 26,
+    fontWeight: "bold",
   },
   userName: {
-    color: "black",
+    color: "#3498db",
     fontWeight: "bold",
   },
   welcomeText: {
     color: "#333",
-    fontSize: 20,
+    fontSize: 24,
     marginTop: 100,
-    marginVertical: spacing.xl,
+    textAlign: "center",
   },
 })
 

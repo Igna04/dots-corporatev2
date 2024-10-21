@@ -1,5 +1,6 @@
 /* eslint-disable react-native/no-color-literals */
 /* eslint-disable import/no-duplicates */
+
 import React, { FC, useState } from "react"
 import { View, ViewStyle, StyleSheet, Image, ImageStyle, TextStyle } from "react-native"
 import { Button, Screen, Text } from "../components"
@@ -11,12 +12,14 @@ import { isRTL } from "../i18n"
 import { CustomDrawer } from "./CustomDrawer"
 import { DrawerIconButton } from "./DemoShowroomScreen/DrawerIconButton"
 import { useNavigation } from "@react-navigation/native"
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function DemoDebugScreen(
   _props,
 ) {
-  const { authenticationStore: { logout } } = useStores()
+  const {
+    authenticationStore: { logout },
+  } = useStores()
 
   const [open, setOpen] = useState(false)
 
@@ -27,21 +30,15 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
 
   const handleLogout = async () => {
     try {
-      // Remove the auth token
-      await AsyncStorage.removeItem('authToken')
+      await AsyncStorage.removeItem("authToken")
 
-      // Call the logout function from the authentication store
       await logout()
-
-      // Redirect to the login page
-      // Note: Replace 'Login' with the actual name of your login screen in the navigation stack
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Login' }],
+        routes: [{ name: "Login" }],
       })
     } catch (error) {
-      console.error('Error during logout:', error)
-      // Handle any errors that occur during the logout process
+      console.error("Error during logout:", error)
     }
   }
 
@@ -61,10 +58,7 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
         </View>
 
         <View style={$content}>
-          <Button
-            style={$bluetoothButton}
-            onPress={() => navigation.navigate('Bluetooth')}
-          >
+          <Button style={$bluetoothButton} onPress={() => navigation.navigate("Bluetooth")}>
             <View style={$buttonContent}>
               <Image source={require("../assets/img/Bluetooth.png")} style={$bluetoothIcon} />
               <Text style={$bluetoothButtonText}>Konfigurasi Bluetooth</Text>
@@ -84,7 +78,6 @@ export const DemoDebugScreen: FC<DemoTabScreenProps<"DemoDebug">> = function Dem
     </Drawer>
   )
 }
-
 
 // Style yang disesuaikan dari DemoPodcastListScreen
 const styles = StyleSheet.create({
@@ -117,7 +110,7 @@ const $content: ViewStyle = {
 }
 
 const $bluetoothButton: ViewStyle = {
-  backgroundColor: '#0d30b1',
+  backgroundColor: "#2196F3",
   borderRadius: 15,
   marginTop: spacing.md,
   paddingHorizontal: spacing.lg,

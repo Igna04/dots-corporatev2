@@ -1,51 +1,53 @@
 /* eslint-disable react-native/no-color-literals */
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { FontAwesome } from "@expo/vector-icons";
-import { Screen, Text } from "../../components";
-import { spacing } from "app/theme";
-import { api } from "../../services/api";
+import React, { useState, useEffect } from "react"
+import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import { FontAwesome } from "@expo/vector-icons"
+import { Screen, Text } from "../../components"
+import { spacing } from "app/theme"
+import { api } from "../../services/api"
 
-// Define the structure of a transaction based on the API data
 interface Transaction {
-  id: string; // 'id' from API
-  status: number; // 'status' from API
-  created_at: string; // 'created_at' from API
+  id: string
+  status: number
+  created_at: string
   created_by: {
-    first_name: string;
-    last_name: string;
-    username: string;
-  }; // Added to display the creator's information if needed
+    first_name: string
+    last_name: string
+    username: string
+  }
 }
 
 export const AllBatchPage: React.FC = ({ route }) => {
-  const navigation = useNavigation();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Fetch data from API
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const result = await api.getTransactionBatches();
+        const result = await api.getTransactionBatches()
         if (result && result.kind === "ok") {
-          console.log("Data from API: ", result.transactionBatches); // Debugging
-          setTransactions(result.transactionBatches);
+          console.log("Data from API: ", result.transactionBatches)
+          // Sort transactions by created_at in descending order (newest first)
+          const sortedTransactions = result.transactionBatches.sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          )
+          setTransactions(sortedTransactions.slice(0, 20))
         } else {
-          console.error("Failed to load transaction batches");
+          console.error("Failed to load transaction batches")
         }
       } catch (error) {
-        console.error("Error fetching transaction batches:", error);
+        console.error("Error fetching transaction batches:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchTransactions();
-  }, []);
+    fetchTransactions()
+  }, [])
 
-  console.log("Transactions state: ", transactions); // Debugging to ensure state is updated
+  console.log("Sorted Transactions state: ", transactions)
 
   return (
     <Screen preset="scroll" contentContainerStyle={styles.scrollContainer} safeAreaEdges={["top"]}>
@@ -65,14 +67,21 @@ export const AllBatchPage: React.FC = ({ route }) => {
             transactions.map((transaction, index) => (
               <View key={index} style={styles.card}>
                 <Text style={styles.cardTitle}>Batch ID: {transaction.id}</Text>
-                <Text style={styles.cardText}>Status: {transaction.status}</Text>
                 <Text style={styles.cardText}>
-                  Tanggal Buat: {new Date(transaction.created_at).toLocaleDateString()}
+                  Status: {transaction.status === 1 ? "Active" : "Inactive"}
                 </Text>
                 <Text style={styles.cardText}>
-                  Dibuat oleh: {transaction.created_by.first_name} {transaction.created_by.last_name}
+                  Tanggal Buat: {new Date(transaction.created_at).toLocaleString()}
                 </Text>
-                <TouchableOpacity onPress={() => console.log("Sejarah pressed")}>
+                <Text style={styles.cardText}>
+                  Dibuat oleh: {transaction.created_by.first_name}{" "}
+                  {transaction.created_by.last_name}
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    console.log(`Sejarah pressed with transaction id ${transaction.id}`)
+                  }
+                >
                   <Text style={styles.historyLink}>SEJARAH</Text>
                 </TouchableOpacity>
               </View>
@@ -81,8 +90,8 @@ export const AllBatchPage: React.FC = ({ route }) => {
         </ScrollView>
       )}
     </Screen>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   backButton: {
@@ -131,10 +140,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loader: {
-    alignItems: 'center',
-    display: 'flex',
-    height: '100%',
-    justifyContent: 'center', /* Adjust as needed */
+    alignItems: "center",
+    display: "flex",
+    height: "100%",
+    justifyContent: "center" /* Adjust as needed */,
   },
   noDataText: {
     color: "gray",
@@ -151,6 +160,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-});
+})
 
-export default AllBatchPage;
+export default AllBatchPage
